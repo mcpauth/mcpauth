@@ -6,7 +6,6 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist && tsc -b tsconfig.json --force",
-    "db:generate": "prisma generate --schema ./src/stores/prisma/schema.prisma",
     "dev": "tsc -w"
   },
   "dependencies": {
@@ -30,6 +29,9 @@
     "pg": "^8.11.5",
     "prisma": "latest",
     "typescript": "latest"
+  },
+  "prisma": {
+    "schema": "./src/stores/prisma/schema.prisma"
   },
   "exports": {
     ".": {
