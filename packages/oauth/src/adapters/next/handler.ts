@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { InternalConfig } from "../core/types";
+import type { InternalConfig } from "../../core/types";
 import {
   nextRequestToHttpRequest,
   httpResponseToNextResponse,
   wrapInternalConfigForFramework,
   NextFormDataAdapter,
 } from "./adapters";
-import { handleGetAuthorize, handlePostAuthorize } from "../routes/authorize";
-import { handleToken } from "../routes/token";
-import { handleRevoke } from "../routes/revoke";
-import { handleRegisterClient } from "../routes/register";
+import { handleGetAuthorize, handlePostAuthorize } from "../../routes/authorize";
+import { handleToken } from "../../routes/token";
+import { handleRevoke } from "../../routes/revoke";
+import { handleRegisterClient } from "../../routes/register";
 import {
   handleAuthorizationServerMetadata,
   handleProtectedResourceMetadata,
   handleJwks,
-} from "../routes/well-known";
-import { handleOptions } from "../routes/options";
+} from "../../routes/well-known";
+import { handleOptions } from "../../routes/options";
 
 export function createOAuthHandler(internalConfig: InternalConfig) {
   const wrappedConfig = wrapInternalConfigForFramework(internalConfig);

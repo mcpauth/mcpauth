@@ -6,6 +6,7 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist && tsc -b tsconfig.json --force",
+    "db:generate": "prisma generate --schema ./src/stores/prisma/schema.prisma",
     "dev": "tsc -w"
   },
   "dependencies": {
@@ -36,20 +37,20 @@
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
-    "./next": {
-      "development": "./src/next/index.ts",
-      "types": "./dist/next/index.d.ts",
-      "default": "./dist/next/index.js"
+    "./adapters/next": {
+      "development": "./src/adapters/next/index.ts",
+      "types": "./dist/adapters/next/index.d.ts",
+      "default": "./dist/adapters/next/index.js"
     },
-    "./adapters/prisma": {
-      "development": "./src/adapters/prisma/index.ts",
-      "types": "./dist/adapters/prisma/index.d.ts",
-      "default": "./dist/adapters/prisma/index.js"
+    "./stores/prisma": {
+      "development": "./src/stores/prisma/index.ts",
+      "types": "./dist/stores/prisma/index.d.ts",
+      "default": "./dist/stores/prisma/index.js"
     },
-    "./adapters/drizzle": {
-      "development": "./src/adapters/dizzle/index.ts",
-      "types": "./dist/adapters/drizzle/index.d.ts",
-      "default": "./dist/adapters/drizzle/index.js"
+    "./stores/drizzle": {
+      "development": "./src/stores/dizzle/index.ts",
+      "types": "./dist/stores/drizzle/index.d.ts",
+      "default": "./dist/stores/drizzle/index.js"
     },
     "./core": {
       "development": "./src/core/index.ts",

@@ -1,6 +1,6 @@
-import { McpAuth } from "@tmcp/oauth/next";
+import { McpAuth } from "@tmcp/oauth/adapters/next";
 
-import { PrismaAdapter } from "@tmcp/oauth/adapters/prisma";
+import { PrismaAdapter } from "@tmcp/oauth/stores/prisma";
 import { db } from "./db";
 import { NextRequest } from "next/server";
 
@@ -11,6 +11,7 @@ export const { handlers, auth } = McpAuth({
   adapter: PrismaAdapter(db),
 
   issuerUrl: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+  issuerPath: "/api/oauth",
 
   serverOptions: {
     accessTokenLifetime: 3600,

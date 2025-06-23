@@ -4,7 +4,7 @@ import type {
   AuthenticateResourceRequestOptions,
   AuthenticatedTokenData,
   OAuthUser,
-} from "../core/types";
+} from "../../core/types";
 import {
   Request as OAuth2Request,
   Response as OAuth2Response,

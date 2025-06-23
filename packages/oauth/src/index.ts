@@ -9,7 +9,4 @@ export type {
   AuthenticatedTokenData,
   OAuthAuthorizationRequestInfo,
   AuthorizationDetails,
-
 } from './core/types';
-export type { OAuthNextInstance } from './next';
-export { ResourceAuthenticationError } from './next/auth';

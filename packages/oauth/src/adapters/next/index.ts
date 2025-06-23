@@ -7,11 +7,11 @@ import type {
   InternalConfig,
   AuthorizationDetails,
   SignInParams,
-} from "../core/types";
+} from "../../core/types";
 import type { OAuthNextInstance } from "./adapters";
 import { createOAuthHandler as internalCreateOAuthHandler } from "./handler";
 import { createResourceAuthenticator as internalCreateResourceAuthenticator } from "./auth";
-import { createCompleteOAuthModel } from "../lib/adapter-factory";
+import { createCompleteOAuthModel } from "../../lib/adapter-factory";
 
 export type { OAuthNextInstance } from "./adapters";
 

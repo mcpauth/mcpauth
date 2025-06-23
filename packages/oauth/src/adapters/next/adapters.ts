@@ -4,13 +4,13 @@ import type {
   HttpResponse,
   FrameworkConfig,
   FormData,
-} from "../core/framework-types";
+} from "../../core/framework-types";
 import type {
   AuthenticatedTokenData,
   AuthenticateResourceRequestOptions,
   InternalConfig,
   SignInParams,
-} from "../core/types";
+} from "../../core/types";
 
 /**
  * Convert NextRequest to framework-agnostic HttpRequest
