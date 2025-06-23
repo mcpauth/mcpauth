@@ -79,6 +79,7 @@ model Authenticator {
 }
 
 // MARK: OAUTH SERVER
+
 model OAuthClient {
   id           String   @id @default(cuid())
   clientId     String   @unique
@@ -87,10 +88,10 @@ model OAuthClient {
   description  String?
   logoUri      String?
   redirectUris String[]
-  grantTypes   String[] // e.g., ["authorization_code", "refresh_token"]
-  scope        String? // Default scope for the client
+  grantTypes   String[]
+  scope        String?
 
-  userId String? // Made optional
+  userId String?
 
   authorizationCodes OAuthAuthorizationCode[]
   tokens             OAuthToken[]
@@ -104,8 +105,9 @@ model OAuthAuthorizationCode {
   expiresAt           DateTime
   redirectUri         String
   scope               String?
-  codeChallenge       String? // For PKCE
-  codeChallengeMethod String? // For PKCE, e.g., "S256"
+  authorizationDetails Json?
+  codeChallenge       String?
+  codeChallengeMethod String?
 
   clientId String
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -121,6 +123,7 @@ model OAuthToken {
   refreshToken          String?   @unique
   refreshTokenExpiresAt DateTime?
   scope                 String?
+  authorizationDetails  Json?
 
   clientId String
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)

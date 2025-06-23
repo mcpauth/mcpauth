@@ -7,7 +7,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Optional for WebAuthn support
 model OAuthClient {
   id           String   @id @default(cuid())
   clientId     String   @unique
@@ -16,10 +15,10 @@ model OAuthClient {
   description  String?
   logoUri      String?
   redirectUris String[]
-  grantTypes   String[] // e.g., ["authorization_code", "refresh_token"]
-  scope        String? // Default scope for the client
+  grantTypes   String[]
+  scope        String?
 
-  userId String? // Made optional
+  userId String?
 
   authorizationCodes OAuthAuthorizationCode[]
   tokens             OAuthToken[]
@@ -34,8 +33,8 @@ model OAuthAuthorizationCode {
   redirectUri         String
   scope               String?
   authorizationDetails Json?
-  codeChallenge       String? // For PKCE
-  codeChallengeMethod String? // For PKCE, e.g., "S256"
+  codeChallenge       String?
+  codeChallengeMethod String?
 
   clientId String
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
@@ -59,18 +58,4 @@ model OAuthToken {
   userId String
 
   createdAt DateTime @default(now())
-}
-
-// Optional for WebAuthn support
-model Authenticator {
-  credentialID         String  @unique
-  userId               String
-  providerAccountId    String
-  credentialPublicKey  String
-  counter              Int
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String?
-
-  @@id([userId, credentialID])
 }

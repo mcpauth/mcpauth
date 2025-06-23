@@ -27,7 +27,7 @@
     "@types/uuid": "^9.0.8",
     "drizzle-orm": "^0.30.0",
     "pg": "^8.11.5",
-    "prisma": "latest",
+    "@prisma/client": "^6.0.0",
     "typescript": "latest"
   },
   "prisma": {
