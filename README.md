@@ -6,7 +6,7 @@ This repository contains the `@tmcp/oauth` package and an example Next.js applic
 
 ### `/packages/oauth`
 
-`@tmcp/oauth` is a library that provides an OAuth 2.0 server implementation. It is designed to be easily integrated into server-side applications to allow Model-Context-Protocol (MCP) clients to authenticate and access protected resources.
+`@tmcp/oauth` is a library that provides an OAuth 2.0 server implementation. It is designed to be easily integrated into server-side applications to allow [Model-Context-Protocol (MCP)](https://modelcontextprotocol.io/) clients to authenticate and access protected resources.
 
 ### `/apps/nextjs`
 
@@ -15,6 +15,16 @@ This is an example Next.js application that demonstrates how to use `@tmcp/oauth
 ## Setup and Usage
 
 Here’s how to set up `@tmcp/oauth` in your Next.js project to secure an MCP endpoint.
+
+### 1. Install Dependencies
+
+```bash
+npm install @tmcp/oauth @vercel/mcp-adapter
+
+## Depending on your ORM, you may need to install additional dependencies
+npm install @prisma/client
+npm install drizzle-orm
+```
 
 ### 1. Create `auth.ts`
 
@@ -143,4 +153,181 @@ const handler = async (req: NextRequest) => {
 };
 
 export { handler as GET, handler as POST };
+```
+
+### 6. Configure your Database Adapter
+
+This library uses adapters to connect to different databases. Right now, Prisma and Drizzle are supported. 
+
+
+#### Prisma
+
+`@tmcp/oauth` provides a `DrizzleAdapter` that can be used to connect to a Drizzle database.
+
+```typescript
+// oauth.ts
+import { McpAuth } from "@tmcp/oauth/adapters/next";
+import { DrizzleAdapter } from "@tmcp/oauth/stores/drizzle";
+
+export const { handlers, auth } = McpAuth({
+  adapter: DrizzleAdapter(db),
+
+  ...
+});
+```
+
+If you are using the `PrismaAdapter`, you will need to add the following models to your `prisma/schema.prisma` file:
+
+```prisma
+// prisma/schema.prisma
+
+model OAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  clientSecret String
+  name         String
+  description  String?
+  logoUri      String?
+  redirectUris String[]
+  grantTypes   String[]
+  scope        String?
+
+  userId String?
+
+  authorizationCodes OAuthAuthorizationCode[]
+  tokens             OAuthToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OAuthAuthorizationCode {
+  authorizationCode   String   @id
+  expiresAt           DateTime
+  redirectUri         String
+  scope               String?
+  authorizationDetails Json?
+  codeChallenge       String?
+  codeChallengeMethod String?
+
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+model OAuthToken {
+  accessToken           String    @id
+  accessTokenExpiresAt  DateTime
+  refreshToken          String?   @unique
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  authorizationDetails  Json?
+
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+```
+
+
+
+#### Drizzle
+
+`@tmcp/oauth` provides a `DrizzleAdapter` that can be used to connect to a Drizzle database.
+
+```typescript
+// oauth.ts
+import { McpAuth } from "@tmcp/oauth/adapters/next";
+import { DrizzleAdapter } from "@tmcp/oauth/stores/drizzle";
+
+export const { handlers, auth } = McpAuth({
+  adapter: DrizzleAdapter(db),
+
+  ...
+});
+```
+
+Schema:
+
+```typescript
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  jsonb,
+} from "drizzle-orm/pg-core";
+
+export const oAuthClient = pgTable("oauth_client", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  clientId: varchar("client_id", { length: 255 }).unique().notNull(),
+  clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  logoUri: text("logo_uri"),
+  redirectUris: text("redirect_uris").array().notNull(),
+  grantTypes: text("grant_types").array().notNull(),
+  scope: text("scope"),
+  userId: varchar("user_id", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
+  authorizationCode: varchar("authorization_code", { length: 255 }).primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  scope: text("scope"),
+  authorizationDetails: jsonb("authorization_details"),
+  codeChallenge: text("code_challenge"),
+  codeChallengeMethod: text("code_challenge_method"),
+  clientId: varchar("client_id", { length: 255 })
+    .notNull()
+    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oAuthToken = pgTable("oauth_token", {
+  accessToken: varchar("access_token", { length: 255 }).primaryKey(),
+  accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
+  refreshToken: varchar("refresh_token", { length: 255 }).unique(),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  authorizationDetails: jsonb("authorization_details"),
+  clientId: varchar("client_id", { length: 255 })
+    .notNull()
+    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oAuthClientRelations = relations(oAuthClient, ({ many }) => ({
+  authorizationCodes: many(oAuthAuthorizationCode),
+  tokens: many(oAuthToken),
+}));
+
+export const oAuthAuthorizationCodeRelations = relations(
+  oAuthAuthorizationCode,
+  ({ one }) => ({
+    client: one(oAuthClient, {
+      fields: [oAuthAuthorizationCode.clientId],
+      references: [oAuthClient.id],
+    }),
+  }),
+);
+
+export const oAuthTokenRelations = relations(oAuthToken, ({ one }) => ({
+  client: one(oAuthClient, {
+    fields: [oAuthToken.clientId],
+    references: [oAuthClient.id],
+  }),
+}));
 ```

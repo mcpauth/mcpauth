@@ -5,8 +5,6 @@ import {
   varchar,
   timestamp,
   jsonb,
-  boolean,
-  integer,
 } from "drizzle-orm/pg-core";
 
 export const oAuthClient = pgTable("oauth_client", {
