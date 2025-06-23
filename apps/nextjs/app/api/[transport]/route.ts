@@ -16,7 +16,6 @@ import { auth as mcpAuth } from "@/oauth";
 const handler = async (req: NextRequest) => {
   const session = await mcpAuth(req);
 
-  // Auth.js pattern: simple null check
   if (!session) {
     return NextResponse.json(
       { error: "unauthorized" },
@@ -36,17 +35,17 @@ const handler = async (req: NextRequest) => {
     // --- MCP Configuration ---
     // Second argument to `createMcpHandler` is the configuration object.
     {
-      // // `capabilities` describes the tools available to the MCP client.
-      // capabilities: {
-      //   tools: {
-      //     // search: {
-      //     //   description: "Search for articles.",
-      //     // },
-      //     // fetch: {
-      //     //   description: "Fetch an article by ID.",
-      //     // },
-      //   },
-      // },
+      // `capabilities` describes the tools available to the MCP client.
+      capabilities: {
+        tools: {
+          search: {
+            description: "Search for articles.",
+          },
+          fetch: {
+            description: "Fetch an article by ID.",
+          },
+        },
+      },
     },
     // Third argument to `createMcpHandler` provides additional options for the adapter.
     {

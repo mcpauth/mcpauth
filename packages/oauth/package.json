@@ -78,7 +78,8 @@
       "development": "./src/services/index.ts",
       "types": "./dist/services/index.d.ts",
       "default": "./dist/services/index.js"
-    }
+    },
+    "./package.json": "./package.json"
   },
   "files": [
     "dist",
