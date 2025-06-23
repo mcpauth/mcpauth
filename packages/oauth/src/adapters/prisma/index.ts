@@ -1,0 +1,1 @@
+export { PrismaAdapter } from './prisma'

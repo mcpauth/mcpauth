@@ -1,0 +1,76 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// Optional for WebAuthn support
+model OAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  clientSecret String
+  name         String
+  description  String?
+  logoUri      String?
+  redirectUris String[]
+  grantTypes   String[] // e.g., ["authorization_code", "refresh_token"]
+  scope        String? // Default scope for the client
+
+  userId String? // Made optional
+
+  authorizationCodes OAuthAuthorizationCode[]
+  tokens             OAuthToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OAuthAuthorizationCode {
+  authorizationCode   String   @id
+  expiresAt           DateTime
+  redirectUri         String
+  scope               String?
+  authorizationDetails Json?
+  codeChallenge       String? // For PKCE
+  codeChallengeMethod String? // For PKCE, e.g., "S256"
+
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+model OAuthToken {
+  accessToken           String    @id
+  accessTokenExpiresAt  DateTime
+  refreshToken          String?   @unique
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  authorizationDetails  Json?
+
+  clientId String
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+// Optional for WebAuthn support
+model Authenticator {
+  credentialID         String  @unique
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  @@id([userId, credentialID])
+}
