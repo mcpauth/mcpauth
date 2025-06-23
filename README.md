@@ -122,7 +122,7 @@ Create an API route for your MCP server. For example, `app/api/[transport]/route
 // app/api/[transport]/route.ts
 import { createMcpHandler } from "@vercel/mcp-adapter";
 import { NextRequest, NextResponse } from "next/server";
-import { auth as mcpAuth } from "@/auth"; // Adjust the import path to your auth.ts file
+import { auth as mcpAuth } from "@/oauth"; // Adjust the import path to your oauth.ts file
 
 const handler = async (req: NextRequest) => {
   const session = await mcpAuth(req);
