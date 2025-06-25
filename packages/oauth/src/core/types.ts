@@ -7,7 +7,6 @@ import type {
   Token,
   Client,
 } from "@node-oauth/oauth2-server";
-import type { NextRequest, NextResponse } from "next/server";
 
 export interface OAuthUser {
   id: string;
@@ -141,7 +140,7 @@ export interface InternalAuthAdapter
 }
 
 // Configuration for the OAuth handler
-export interface Config {
+export interface Config<Req = any, Res = any> {
   // The OAuth model implementation.
   adapter: McpAuthAdapter;
 
@@ -155,8 +154,8 @@ export interface Config {
   };
 
   // --- User Authentication (for authorization code flow) ---
-  authenticateUser: (request: NextRequest) => Promise<OAuthUser | null>;
-  signInUrl: (request: NextRequest, callbackUrl: string) => string;
+  authenticateUser: (request: Req) => Promise<OAuthUser | null>;
+  signInUrl: (request: Req, callbackUrl: string) => string;
 
   // --- 
   issuerUrl: string;
@@ -166,16 +165,16 @@ export interface Config {
 
   // --- UI Customization ---
   renderConsentPage?: string | ((
-    request: NextRequest,
+    request: Req,
     data: OAuthAuthorizationRequestInfo,
-  ) => Promise<NextResponse>);
+  ) => Promise<Res>);
 }
 
 /**
  * Internal configuration object used by the library after initialization.
  * It augments the user-provided Config with the created OAuth2Server instance.
  */
-export interface InternalConfig extends Omit<Config, "adapter"> {
+export interface InternalConfig<Req = any, Res = any> extends Omit<Config<Req, Res>, "adapter"> {
   _oauthServerInstance: OAuth2Server;
   adapter: InternalAuthAdapter;
 }

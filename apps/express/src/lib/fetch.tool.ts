@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { fetchArticleById } from "@/lib/data";
+import { fetchArticleById } from "./data.js";
 
 export function createFetchTool(server: any) {
   server.tool(

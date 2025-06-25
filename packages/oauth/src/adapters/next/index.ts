@@ -1,4 +1,4 @@
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextResponse } from "next/server";
 import OAuth2Server from "@node-oauth/oauth2-server";
 import type {
   Config,
@@ -13,8 +13,6 @@ import { createOAuthHandler as internalCreateOAuthHandler } from "./handler";
 import { createResourceAuthenticator as internalCreateResourceAuthenticator } from "./auth";
 import { createCompleteOAuthModel } from "../../lib/adapter-factory";
 
-export type { OAuthNextInstance } from "./adapters";
-
 /**
  * Initializes the OAuthNext library with the provided configuration.
  * Returns an object containing route handlers and an authentication function.
@@ -22,7 +20,7 @@ export type { OAuthNextInstance } from "./adapters";
  * @param config The OAuthNext configuration object.
  * @returns An OAuthNextInstance containing handlers and an auth function.
  */
-export function McpAuth(config: Config): OAuthNextInstance {
+export function McpAuth(config: Config<NextRequest, NextResponse>): OAuthNextInstance {
   const adapter = createCompleteOAuthModel(config.adapter, config);
 
   const oauthServerInstance = new OAuth2Server({
@@ -37,7 +35,7 @@ export function McpAuth(config: Config): OAuthNextInstance {
     // e.g., addAcceptedScopesHeader, addAuthorizedScopesHeader, allowEmptyState, etc.
   });
 
-  const internalConfig: InternalConfig = {
+  const internalConfig: InternalConfig<NextRequest, NextResponse> = {
     ...config,
     adapter,
     _oauthServerInstance: oauthServerInstance,

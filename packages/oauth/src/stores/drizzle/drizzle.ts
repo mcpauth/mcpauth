@@ -17,10 +17,13 @@ import {
   McpAuthAdapter,
 } from "../../core/types";
 import { v4 as uuid } from "uuid";
+import { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 
 export function DrizzleAdapter(
-  db: NodePgDatabase<typeof schema>
+  client: PgDatabase<PgQueryResultHKT, any>,
 ): McpAuthAdapter {
+  const db = client as NodePgDatabase<typeof schema>;
+
   return {
     async getClientWithHashedSecret(
       clientId: string,

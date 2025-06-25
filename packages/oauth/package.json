@@ -14,20 +14,21 @@
     "jose": "^5.6.3"
   },
   "peerDependencies": {
-    "next": "^15.0.0",
     "@prisma/client": "^6.0.0",
     "drizzle-orm": "*",
-    "uuid": "*",
-    "pg": "*"
+    "next": "^15.0.0",
+    "pg": "*",
+    "uuid": "*"
   },
   "devDependencies": {
+    "@prisma/client": "^6.0.0",
+    "@types/cookie": "^0.6.0",
     "@types/node": "latest",
     "@types/pg": "^8.11.5",
     "@types/react": "latest",
     "@types/uuid": "^9.0.8",
-    "drizzle-orm": "^0.30.0",
+    "drizzle-orm": "^0.44.2",
     "pg": "^8.11.5",
-    "@prisma/client": "^6.0.0",
     "typescript": "latest"
   },
   "prisma": {
@@ -43,6 +44,11 @@
       "development": "./src/adapters/next/index.ts",
       "types": "./dist/adapters/next/index.d.ts",
       "default": "./dist/adapters/next/index.js"
+    },
+    "./adapters/express": {
+      "development": "./src/adapters/express/index.ts",
+      "types": "./dist/adapters/express/index.d.ts",
+      "default": "./dist/adapters/express/index.js"
     },
     "./stores/prisma": {
       "development": "./src/stores/prisma/index.ts",

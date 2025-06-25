@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { searchArticles } from "@/lib/data";
+import { searchArticles } from "./data.js";
 
 export function createSearchTool(server: any) {
   server.tool(
