@@ -15,10 +15,10 @@ The source code for this demo is available in the [`apps/nextjs`](./apps/nextjs)
 ## Why @mcpauth/auth?
 
 ### Own Your Data and Your Authentication
-With `@mcpauth/auth`, you host the server, you own the data. No vendor lock-in.
+With `@mcpauth/auth`, you host the server, you own the data. No separate authorization server. No vendor lock-in.
 
 ### Required for Modern MCP Clients
-Mjor MCP clients like OpenAI's ChatGPT require OAuth 2.0 for authenticating users and authorizing access to tools and resources. `@mcpauth/auth` provides the compliant, secure server you need to integrate with these modern clients.
+Major MCP clients like OpenAI's ChatGPT require OAuth 2.0 for authenticating users and authorizing access to tools and resources. `@mcpauth/auth` provides the compliant, secure server you need to integrate with these modern clients.
 
 ### Seamlessly Integrate Your Existing Auth
 The biggest challenge with adopting a new authentication system is integrating it with your existing user management. `@mcpauth/auth` solves this with a single, powerful function: `authenticateUser`.
