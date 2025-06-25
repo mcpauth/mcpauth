@@ -1,12 +1,34 @@
 # @mcpauth/auth
 
-This repository contains the `@mcpauth/auth` package and example applications demonstrating its usage.
+**A full-featured, self-hostable OAuth 2.0 server designed for the Modern AI-era and the [Model-Context-Protocol (MCP)](https://modelcontextprotocol.io/).**
 
-## Overview
+`@mcpauth/auth` empowers you to secure your MCP applications with a robust and flexible OAuth 2.0 implementation that you control.
 
-`@mcpauth/auth` is a library that provides an OAuth 2.0 server implementation. It is designed to be easily integrated into server-side applications to allow [Model-Context-Protocol (MCP)](https://modelcontextprotocol.io/) clients to authenticate and access protected resources.
+## Why @mcpauth/auth?
 
-This library is framework-agnostic but comes with adapters for popular frameworks like Next.js and Express. It also supports different database stores through adapters, with Drizzle and Prisma being currently supported.
+### Own Your Data and Your Authentication
+With `@mcpauth/auth`, you host the server, you own the data. No vendor lock-in.
+
+### Required for Modern MCP Clients
+Mjor MCP clients like OpenAI's ChatGPT require OAuth 2.0 for authenticating users and authorizing access to tools and resources. `@mcpauth/auth` provides the compliant, secure server you need to integrate with these modern clients.
+
+### Seamlessly Integrate Your Existing Auth
+The biggest challenge with adopting a new authentication system is integrating it with your existing user management. `@mcpauth/auth` solves this with a single, powerful function: `authenticateUser`.
+
+This function allows you to plug in *any* existing authentication logic. Whether your users are authenticated via a session cookie, a bearer token, or an external system, you can validate them and link them to the OAuth flow with just a few lines of code.
+
+For example, if you're using `@auth/express` for session management, your implementation is as simple as this:
+
+```typescript
+  authenticateUser: async (request: Request) => {
+    // Grab the user's existing session from a cookie
+    const session = await getSession(request, authConfig);
+    // Return the user object if they are authenticated, or null if not
+    return (session?.user as OAuthUser) ?? null;
+  },
+```
+
+This flexibility means you can add a compliant MCP OAuth layer to your application without rebuilding your entire authentication stack.
 
 ## Core Setup
 
