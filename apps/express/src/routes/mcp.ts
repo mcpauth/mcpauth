@@ -6,7 +6,7 @@ import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import { createSearchTool } from "../lib/search.tool.js";
 import { createFetchTool } from "../lib/fetch.tool.js";
-import { getMcpSession } from "@tmcp/oauth/adapters/express";
+import { getMcpSession } from "@mcpauth/auth/adapters/express";
 import { mcpAuthConfig } from "../config/mcpAuth.config.js";
 
 export const mcpRouter = express.Router();

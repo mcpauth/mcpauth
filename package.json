@@ -1,7 +1,9 @@
 {
-  "name": "tmcp",
+  "name": "root",
   "version": "1.0.0",
   "private": false,
+  "author": "MCP Auth",
+  "license": "ISC",
   "workspaces": [
     "packages/*",
     "apps/*"

@@ -14,7 +14,7 @@ import {
 import { ExpressAuth } from "@auth/express"
 import { authConfig } from "./config/auth.config.js"
 
-// import { McpAuth } from "@tmcp/oauth/adapters/express";
+// import { McpAuth } from "@mcpauth/auth/adapters/express";
 import { mcpAuth } from "./config/mcpAuth.config.js";
 
 import * as pug from "pug";

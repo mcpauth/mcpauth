@@ -10,10 +10,10 @@ export default async function Index() {
       <main className="flex-1 min-h-0 flex flex-col container mx-auto max-w-2xl py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8 p-6">
           <h2 className="text-3xl font-bold text-slate-800 mb-3">
-            Welcome to the @tmcp/oauth Next.js Example!
+            Welcome to the @mcpauth/auth Next.js Example!
           </h2>
           <p className="text-slate-600 mb-8">
-            This is an example site to demonstrate how to use @tmcp/oauth for
+            This is an example site to demonstrate how to use @mcpauth/auth for
             MCP authentication in a Next.js application. This library provides a
             simple way to add an OAuth2 authentication server to your project,
             which many MCP Clients require.

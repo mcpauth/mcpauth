@@ -1,7 +1,9 @@
 {
-  "name": "@tmcp/oauth",
+  "name": "@mcpauth/auth",
   "version": "0.1.0",
   "private": false,
+  "author": "MCPAuth",
+  "license": "ISC",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {

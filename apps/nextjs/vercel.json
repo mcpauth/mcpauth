@@ -1,5 +1,5 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build --workspace=@tmcp/oauth --if-present && npm run build"
+  "buildCommand": "npm run build --workspace=@mcpauth/auth --if-present && npm run build"
 }

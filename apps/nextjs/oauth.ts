@@ -1,11 +1,11 @@
-import { McpAuth } from "@tmcp/oauth/adapters/next";
+import { McpAuth } from "@mcpauth/auth/adapters/next";
 
-import { PrismaAdapter } from "@tmcp/oauth/stores/prisma";
+import { PrismaAdapter } from "@mcpauth/auth/stores/prisma";
 import { db } from "./db";
 import { NextRequest } from "next/server";
 
 import { auth as nextAuth } from "./auth";
-import type { OAuthUser } from "@tmcp/oauth";
+import type { OAuthUser } from "@mcpauth/auth";
 
 export const { handlers, auth } = McpAuth({
   adapter: PrismaAdapter(db),

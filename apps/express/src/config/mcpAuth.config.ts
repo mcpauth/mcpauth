@@ -1,17 +1,17 @@
-import { McpAuth } from "@tmcp/oauth/adapters/express";
+import { McpAuth } from "@mcpauth/auth/adapters/express";
 
-import { DrizzleAdapter } from "@tmcp/oauth/stores/drizzle";
+import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
 import { db } from "./db.js";
 
 import { authConfig } from "./auth.config.js";
-import type { OAuthUser } from "@tmcp/oauth";
+import type { OAuthUser } from "@mcpauth/auth";
 import { Request } from "express";
 import { getSession } from "@auth/express";
 
 export const mcpAuthConfig = {
   adapter: DrizzleAdapter(db),
 
-  issuerUrl: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
+  issuerUrl: process.env.BASE_URL || "http://localhost:3000",
   issuerPath: "/api/oauth",
 
   serverOptions: {

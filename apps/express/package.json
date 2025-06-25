@@ -1,5 +1,5 @@
 {
-  "description": "Express Auth example app",
+  "description": "Express MCPAuth example app",
   "engines": {
     "node": ">=20.11.0"
   },
