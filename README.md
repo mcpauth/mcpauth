@@ -4,6 +4,14 @@
 
 `@mcpauth/auth` empowers you to secure your MCP applications with a robust and flexible OAuth 2.0 implementation that you control.
 
+## Live Demo
+
+Check out the live demo of `@mcpauth/auth` in action, deployed on Vercel:
+
+[**https://mcpauth-nextjs.vercel.app/**](https://mcpauth-nextjs.vercel.app/)
+
+The source code for this demo is available in the [`apps/nextjs`](./apps/nextjs) directory of this repository.
+
 ## Why @mcpauth/auth?
 
 ### Own Your Data and Your Authentication
