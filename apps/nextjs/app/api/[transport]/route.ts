@@ -10,13 +10,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSearchTool } from "@/server/search.tool";
 import { createFetchTool } from "@/server/fetch.tool";
 
-import { auth as mcpAuth } from "@/oauth";
+import { auth as mcpAuth } from "@/mcpauth";
 
 // Main handler function for GET, POST, DELETE requests to this API route.
 const handler = async (req: NextRequest) => {
   const session = await mcpAuth(req);
 
-  if (!session) {
+  if (!session || !session.user?.id) {
     return NextResponse.json(
       { error: "unauthorized" },
       { status: 401, headers: { "Content-Type": "application/json" } }
@@ -29,8 +29,9 @@ const handler = async (req: NextRequest) => {
     async (server) => {
       // --- Tool Registration ---
       // Register tools using the extracted tool creation functions
-      createSearchTool(server);
-      createFetchTool(server);
+      const userId = session.user.id;
+      createSearchTool(server, userId);
+      createFetchTool(server, userId);
     },
     // --- MCP Configuration ---
     // Second argument to `createMcpHandler` is the configuration object.

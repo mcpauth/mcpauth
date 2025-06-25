@@ -436,8 +436,6 @@ export async function handlePostAuthorize(
 
   const oauthResponse = new OAuthResponse({});
 
-  console.log("userWithAuthDetails", oauthRequest);
-
   try {
     const code = await config._oauthServerInstance.authorize(
       oauthRequest,

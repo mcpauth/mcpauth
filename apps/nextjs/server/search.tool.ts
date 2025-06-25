@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { searchArticles } from "@/lib/data";
+import { createLoggedTool } from "@/lib/logger";
+import type { McpServer } from "@/lib/mcp-types";
 
-export function createSearchTool(server: any) {
-  server.tool(
+export function createSearchTool(server: McpServer, userId?: string) {
+  createLoggedTool(
+    server,
     "search",
     "Search articles. Pass in a query string.",
     {
@@ -19,6 +22,7 @@ export function createSearchTool(server: any) {
           },
         ],
       };
-    }
+    },
+    userId
   );
 }

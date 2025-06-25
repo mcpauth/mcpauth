@@ -1,8 +1,11 @@
 import { z } from "zod";
 import { fetchArticleById } from "@/lib/data";
+import { createLoggedTool } from "@/lib/logger";
+import type { McpServer } from "@/lib/mcp-types";
 
-export function createFetchTool(server: any) {
-  server.tool(
+export function createFetchTool(server: McpServer, userId?: string) {  
+  createLoggedTool(
+    server,
     "fetch",
     "Fetch an article by its ID.",
     {
@@ -32,6 +35,7 @@ export function createFetchTool(server: any) {
         ],
         structuredContent: article as unknown as { [x: string]: unknown },
       };
-    }
+    },
+    userId
   );
 }

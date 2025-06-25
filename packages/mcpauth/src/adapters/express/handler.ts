@@ -24,12 +24,6 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
     req: ExpressRequest,
     res: ExpressResponse
   ): Promise<void> {
-    // console.log("OAuthHandler", req.originalUrl);
-    // In Express, path segments are derived from req.path.
-    // We assume the router is mounted on a base path (e.g., /api/oauth)
-    // and this handler catches the rest (e.g., using '/*').
-
-    // console.log(req.originalUrl, req);
     let url = new URL('http://unk' + req.originalUrl);
     let path = url.pathname;
     const basePath = internalConfig.issuerPath;
@@ -37,12 +31,7 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
       path = path.substring(basePath.length);
     }
     const pathSegments = path.substring(1).split('/');
-    // const pathSegments = req.originalUrl.substring(1).split('/'); // Remove leading '/' and split
     const mainAction = pathSegments[0]?.toLowerCase();
-
-    // console.log(req.originalUrl, pathSegments, mainAction);
-
-    console.log("OAuthHandler", req.originalUrl, pathSegments, mainAction);
 
     try {
       const httpRequest = await expressRequestToHttpRequest(req);
@@ -115,7 +104,6 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
       };
       return httpResponseToExpressResponse(notFoundResponse, res);
     } catch (error: any) {
-      console.error(`[OAuthHandler Error - ${pathSegments.join('/')}]:`, error);
       const errorResponse = {
         status: error.status || error.code || 500,
         headers: error.headers,

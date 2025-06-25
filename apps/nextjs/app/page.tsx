@@ -1,16 +1,41 @@
 import { SignIn, SignOut } from "@/components/auth-components";
 import { CheckCircle } from "lucide-react";
 import { auth } from "@/auth";
+import RequestLogTable from "@/components/request-log-table";
+import { db } from "@/db";
+import ConnectedClients from "@/components/connected-clients";
 
 export default async function Index() {
   const session = await auth();
+  let clientNames: string[] = [];
+
+  if (session?.user?.id) {
+    try {
+      const tokens = await db.oAuthToken.findMany({
+        where: {
+          userId: session.user.id,
+        },
+        select: {
+          client: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      });
+      clientNames = [...new Set(tokens.map((token) => token.client.name))];
+    } catch (error) {
+      console.error("Failed to fetch connected clients:", error);
+      // Silently fail, the component will just show the default state.
+    }
+  }
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
       <main className="flex-1 min-h-0 flex flex-col container mx-auto max-w-2xl py-8 px-4 sm:px-6 lg:px-8">
         <div className="mb-8 p-6">
           <h2 className="text-3xl font-bold text-slate-800 mb-3">
-            Welcome to the @mcpauth/auth Next.js Example!
+            Welcome to the MCP Auth Next.js Example!
           </h2>
           <p className="text-slate-600 mb-8">
             This is an example site to demonstrate how to use @mcpauth/auth for
@@ -53,51 +78,43 @@ export default async function Index() {
                   <span className="font-semibold text-slate-500">2</span>
                 </div>
               </div>
-              <div className="pl-4">
+              <div className="pl-4 w-full">
                 <h3 className="text-xl font-semibold text-slate-800">
                   Connect to ChatGPT MCP
                 </h3>
-                <p className="mt-2 text-slate-600">
-                  Once you have deployed this project, you can connect it to
-                  ChatGPT's Deep Research mode to allow AI models to access
-                  resources on your behalf.
-                </p>
-                <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm">
-                  <ol className="list-decimal space-y-3 pl-5 text-slate-600">
-                    <li>Open ChatGPT.</li>
-                    <li>
-                      Click <strong>"Tools"</strong> under the input field.
-                    </li>
-                    <li>
-                      Select <strong>"Run Deep Research"</strong>.
-                    </li>
-                    <li>
-                      Choose <strong>"Add Sources"</strong> and click{" "}
-                      <strong>"Connect More"</strong>.
-                    </li>
-                    <li>
-                      Click <strong>"Create"</strong> next to{" "}
-                      <strong>"Browse Connectors"</strong>.
-                    </li>
-                    <li>
-                      Fill out the connector's details: provide name,
-                      description, and MCP Server URL:{" "}
-                      <code className="font-mono bg-gray-100 p-1 rounded-md">{`${process.env.NEXT_PUBLIC_BASE_URL}/api/sse`}</code>
-                      .
-                    </li>
-                    <li>
-                      Select <strong>"OAuth Authentication"</strong>, toggle{" "}
-                      <strong>"I trust this application"</strong>, and click{" "}
-                      <strong>"Create"</strong>.
-                    </li>
-                    <li>
-                      Complete the OAuth flow to integrate the connector into
-                      your ChatGPT environment.
-                    </li>
-                  </ol>
-                </div>
+                {session?.user ? (
+                  <ConnectedClients
+                    clients={clientNames}
+                    instructionsVisible={clientNames.length === 0}
+                  />
+                ) : (
+                  <p className="mt-2 text-slate-600">
+                    Log in to see your connected applications.
+                  </p>
+                )}
               </div>
             </div>
+
+            {/* Step 3 */}
+            {session?.user && (
+              <div className="flex items-start mt-12">
+                <div className="absolute -left-4 mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-white">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-slate-300 bg-slate-50">
+                    <span className="font-semibold text-slate-500">3</span>
+                  </div>
+                </div>
+                <div className="pl-4 w-full">
+                  <h3 className="text-xl font-semibold text-slate-800">
+                    MCP Request Logs
+                  </h3>
+                  <p className="mt-2 text-slate-600 mb-4">
+                    The table below shows a history of requests made by connected MCP clients.
+                  </p>
+                  <RequestLogTable />
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </main>

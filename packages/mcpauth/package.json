@@ -7,7 +7,7 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "build": "rm -rf ./dist && tsc -b tsconfig.json --force",
+    "build": "rm -rf ./dist && tsc -b tsconfig.json --force && cp package.json dist/",
     "dev": "tsc -w",
     "publish": "npm publish --access public"
   },
@@ -92,6 +92,7 @@
     "./package.json": "./package.json"
   },
   "files": [
+    "package.json",
     "dist",
     "src"
   ]

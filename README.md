@@ -30,6 +30,17 @@ For example, if you're using `@auth/express` for session management, your implem
 
 This flexibility means you can add a compliant MCP OAuth layer to your application without rebuilding your entire authentication stack.
 
+## Compatibility
+
+`@mcpauth/auth` is designed to be adaptable to your existing stack. Here's a summary of our currently supported frameworks and database stores:
+
+| Type      | Supported          | Notes                                                                                                                              |
+| :-------- | :----------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| Framework | **Next.js**, **Express** | Adapters provide seamless integration with popular Node.js frameworks.                                                         |
+| Database  | **Prisma**, **Drizzle**  | Stores handle all the database interactions for OAuth entities.                                                        |
+
+Don't see your preferred framework or database? [**Request a new adapter or store by opening an issue on GitHub.**](https://github.com/mcpauth/mcpauth/issues/new?assignees=&labels=enhancement,adapter-request&template=feature_request.md&title=Feature%20Request:%20New%20Adapter/Store%20for%20[Framework/Database])
+
 ## Core Setup
 
 These are the basic steps to get started with `@mcpauth/auth`, regardless of your framework or database.

@@ -8,16 +8,16 @@ generator client {
 }
 
 model User {
-  id             String                   @id @default(cuid())
+  id             String          @id @default(cuid())
   name           String?
-  email          String                   @unique
+  email          String          @unique
   emailVerified  DateTime?
   image          String?
   accounts       Account[]
   sessions       Session[]
   // Optional for WebAuthn support
   Authenticator  Authenticator[]
-
+  mcpRequestLogs McpRequestLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +78,19 @@ model Authenticator {
   @@id([userId, credentialID])
 }
 
+model McpRequestLog {
+  id           String   @id @default(cuid())
+  timestamp    DateTime @default(now())
+  functionName String
+  parameters   Json? // Store parameters as JSON
+  results      Json? // Store results as JSON
+  userId       String? // Optional: to link logs to users
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([timestamp])
+}
+
 // MARK: OAUTH SERVER
 
 model OAuthClient {
@@ -101,13 +114,13 @@ model OAuthClient {
 }
 
 model OAuthAuthorizationCode {
-  authorizationCode   String   @id
-  expiresAt           DateTime
-  redirectUri         String
-  scope               String?
+  authorizationCode    String   @id
+  expiresAt            DateTime
+  redirectUri          String
+  scope                String?
   authorizationDetails Json?
-  codeChallenge       String?
-  codeChallengeMethod String?
+  codeChallenge        String?
+  codeChallengeMethod  String?
 
   clientId String
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
