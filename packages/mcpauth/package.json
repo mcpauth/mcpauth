@@ -8,7 +8,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "rm -rf ./dist && tsc -b tsconfig.json --force",
-    "dev": "tsc -w"
+    "dev": "tsc -w",
+    "publish": "npm publish --access public"
   },
   "dependencies": {
     "@node-oauth/oauth2-server": "^5.2.0",
@@ -20,7 +21,8 @@
     "drizzle-orm": "*",
     "next": "^15.0.0",
     "pg": "*",
-    "uuid": "*"
+    "uuid": "*",
+    "express": "*"
   },
   "devDependencies": {
     "@prisma/client": "^6.0.0",
