@@ -12,7 +12,6 @@ Below is an example of what Deep Research with a Custom Connector looks like:
 
 - Implements `search` and `fetch` for the ChatGPT Deep Research Connector.
 - Uses [Auth.js (formerly NextAuth.js v5)](https://authjs.dev) for authentication.
-- Incorporates `@node-oauth/oauth2-server` for OAuth 2.0 server functionality.
 - Includes custom server-side authentication logic for dynamic client registration.
 
 ## Important Considerations

@@ -3,47 +3,25 @@ import type {
   Response as ExpressResponse,
   NextFunction,
 } from "express";
-import OAuth2Server from "@node-oauth/oauth2-server";
 import type {
-  Config,
-  InternalConfig,
   AuthenticateResourceRequestOptions,
   AuthenticatedTokenData,
 } from "../../core/types";
+import { FrameworkConfig } from "../../core/framework-types";
 import { createOAuthHandler } from "./handler";
 import { createResourceAuthenticator as createAuth } from "./auth";
-import { createCompleteOAuthModel } from "../../lib/adapter-factory";
-
-function createInternalConfig(
-  config: Config<ExpressRequest, ExpressResponse>
-): InternalConfig<ExpressRequest, ExpressResponse> {
-  const adapter = createCompleteOAuthModel(config.adapter, config);
-
-  const oauthServerInstance = new OAuth2Server({
-    model: adapter,
-    ...config.serverOptions,
-  });
-
-  return {
-    ...config,
-    adapter,
-    _oauthServerInstance: oauthServerInstance,
-  };
-}
 
 export function McpAuth(
-  config: Config<ExpressRequest, ExpressResponse>
+  config: FrameworkConfig
 ): (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => void {
-  const internalConfig = createInternalConfig(config);
-  return createOAuthHandler(internalConfig);
+  return createOAuthHandler(config);
 }
 
 export function getMcpSession(
-  config: Config<ExpressRequest, ExpressResponse>
+  config: FrameworkConfig
 ): (
   req: ExpressRequest,
   options?: AuthenticateResourceRequestOptions
 ) => Promise<AuthenticatedTokenData | null> {
-  const internalConfig = createInternalConfig(config);
-  return createAuth(internalConfig);
+  return createAuth(config);
 }

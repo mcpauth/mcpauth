@@ -1,6 +1,6 @@
 // Export core types and the error class for consumers
 export type {
-  Config,
+  Adapter,
   OAuthUser,
   OAuthClient,
   ClientRegistrationRequestParams,

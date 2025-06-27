@@ -1,17 +1,13 @@
 import type { NextRequest, NextResponse } from "next/server";
-import OAuth2Server from "@node-oauth/oauth2-server";
 import type {
-  Config,
   AuthenticateResourceRequestOptions,
   AuthenticatedTokenData,
-  InternalConfig,
-  AuthorizationDetails,
   SignInParams,
 } from "../../core/types";
+import type { FrameworkConfig } from "../../core/framework-types";
 import type { OAuthNextInstance } from "./adapters";
 import { createOAuthHandler as internalCreateOAuthHandler } from "./handler";
 import { createResourceAuthenticator as internalCreateResourceAuthenticator } from "./auth";
-import { createCompleteOAuthModel } from "../../lib/adapter-factory";
 
 /**
  * Initializes the OAuthNext library with the provided configuration.
@@ -20,37 +16,16 @@ import { createCompleteOAuthModel } from "../../lib/adapter-factory";
  * @param config The OAuthNext configuration object.
  * @returns An OAuthNextInstance containing handlers and an auth function.
  */
-export function McpAuth(config: Config<NextRequest, NextResponse>): OAuthNextInstance {
-  const adapter = createCompleteOAuthModel(config.adapter, config);
-
-  const oauthServerInstance = new OAuth2Server({
-    model: adapter, // The core of oauth2-server
-
-    accessTokenLifetime: config.serverOptions.accessTokenLifetime || 3600, // Default to 1 hour
-    refreshTokenLifetime: config.serverOptions.refreshTokenLifetime || 1209600, // Default to 2 weeks
-    allowBearerTokensInQueryString:
-      config.serverOptions.allowBearerTokensInQueryString || false,
-
-    // Add other oauth2-server options here if they are exposed in Config
-    // e.g., addAcceptedScopesHeader, addAuthorizedScopesHeader, allowEmptyState, etc.
-  });
-
-  const internalConfig: InternalConfig<NextRequest, NextResponse> = {
-    ...config,
-    adapter,
-    _oauthServerInstance: oauthServerInstance,
-  };
-
-  const actualRouteHandler = internalCreateOAuthHandler(internalConfig);
+export function McpAuth(config: FrameworkConfig): OAuthNextInstance {
+  const actualRouteHandler = internalCreateOAuthHandler(config);
 
   const authFunction = async (
     request: NextRequest,
     options?: AuthenticateResourceRequestOptions
   ): Promise<AuthenticatedTokenData | null> => {
-    return internalCreateResourceAuthenticator(internalConfig)(
-      request,
-      options
-    );
+        return internalCreateResourceAuthenticator(
+      config as FrameworkConfig<NextRequest>
+    )(request, options);
   };
 
   function signIn(params: SignInParams): Promise<void> {

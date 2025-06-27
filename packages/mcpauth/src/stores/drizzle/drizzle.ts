@@ -1,73 +1,77 @@
 import { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "./schema";
-import { eq, and } from "drizzle-orm";
-import type {
-  Client,
-  User,
-  Token,
-  AuthorizationCode,
-  RefreshToken,
-  Falsey,
-} from "@node-oauth/oauth2-server";
+import { eq } from "drizzle-orm";
 import {
+  Adapter,
   OAuthClient,
   OAuthUser,
+  OAuthToken,
+  AuthorizationCode,
   ClientRegistrationRequestParams,
   ClientRegistrationResponseData,
-  McpAuthAdapter,
 } from "../../core/types";
 import { v4 as uuid } from "uuid";
 import { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
+import * as crypto from "crypto";
+import * as bcrypt from "bcryptjs";
 
-export function DrizzleAdapter(
-  client: PgDatabase<PgQueryResultHKT, any>,
-): McpAuthAdapter {
+export function DrizzleAdapter(client: PgDatabase<PgQueryResultHKT, any>): Adapter {
   const db = client as NodePgDatabase<typeof schema>;
 
   return {
-    async getClientWithHashedSecret(
+    async getUser(userId: string): Promise<OAuthUser | null> {
+      // oAuthUser table is removed, so we can't query for a user.
+      // We will assume the user exists and return a minimal user object.
+      return { id: userId };
+    },
+    async getClient(
       clientId: string,
-      clientSecret?: string | null
-    ): Promise<Client | null> {
-      const [dbClient] = await db
-        .select()
-        .from(schema.oAuthClient)
-        .where(eq(schema.oAuthClient.clientId, clientId));
+      clientSecret?: string
+    ): Promise<OAuthClient | null> {
+      const clientRecord = await db.query.oAuthClient.findFirst({
+        where: eq(schema.oAuthClient.clientId, clientId),
+      });
 
-      if (!dbClient) {
+      if (!clientRecord) {
         return null;
       }
 
+      if (clientSecret) {
+        if (!clientRecord.clientSecret) {
+          return null;
+        }
+        const isSecretValid = await bcrypt.compare(
+          clientSecret,
+          clientRecord.clientSecret
+        );
+        if (!isSecretValid) {
+          return null;
+        }
+      }
+
       return {
-        id: dbClient.clientId,
-        redirectUris: dbClient.redirectUris,
-        grants: dbClient.grantTypes,
-        accessTokenLifetime: 3600,
-        refreshTokenLifetime: 1209600,
-        clientSecret: dbClient.clientSecret,
+        ...clientRecord,
+        scope: clientRecord.scope || undefined,
       };
     },
 
-    async saveToken(token: Token, client: Client, user: User): Promise<Token> {
-      const [dbClient] = await db
-        .select({ id: schema.oAuthClient.id })
-        .from(schema.oAuthClient)
-        .where(eq(schema.oAuthClient.clientId, client.id));
-
+    async saveToken(
+      token: Omit<OAuthToken, "client" | "user">,
+      client: OAuthClient,
+      user: OAuthUser
+    ): Promise<OAuthToken> {
       const [createdToken] = await db
         .insert(schema.oAuthToken)
         .values({
           accessToken: token.accessToken,
-          accessTokenExpiresAt: token.accessTokenExpiresAt as Date,
+          accessTokenExpiresAt: token.accessTokenExpiresAt,
           refreshToken: token.refreshToken,
-          refreshTokenExpiresAt: token.refreshTokenExpiresAt as
-            | Date
-            | undefined,
+          refreshTokenExpiresAt: token.refreshTokenExpiresAt,
           scope: Array.isArray(token.scope)
             ? token.scope.join(" ")
-            : (token.scope as string | undefined),
-          authorizationDetails: (user as any).authorizationDetails,
-          clientId: dbClient.id,
+            : token.scope,
+          authorizationDetails: (token as any).authorizationDetails,
+          clientId: client.id,
           userId: user.id,
         })
         .returning();
@@ -79,82 +83,89 @@ export function DrizzleAdapter(
         refreshToken: createdToken.refreshToken ?? undefined,
         refreshTokenExpiresAt: createdToken.refreshTokenExpiresAt ?? undefined,
         scope: createdToken.scope ? createdToken.scope.split(" ") : [],
-        authorizationDetails: createdToken.authorizationDetails,
+        authorizationDetails: createdToken.authorizationDetails as any,
         client: client,
         user: user,
       };
     },
 
-    async getAccessToken(accessToken: string): Promise<Token | Falsey> {
+    async getAccessToken(accessToken: string): Promise<OAuthToken | null> {
       const tokenRecord = await db.query.oAuthToken.findFirst({
         where: eq(schema.oAuthToken.accessToken, accessToken),
         with: { client: true },
       });
 
-      if (!tokenRecord) return false;
+      if (!tokenRecord || !tokenRecord.client) return null;
+
+      const { client, ...restOfToken } = tokenRecord;
+      const user = { id: tokenRecord.userId };
 
       return {
+        ...restOfToken,
         accessToken: tokenRecord.accessToken,
         accessTokenExpiresAt: tokenRecord.accessTokenExpiresAt,
         refreshToken: tokenRecord.refreshToken ?? undefined,
         refreshTokenExpiresAt: tokenRecord.refreshTokenExpiresAt ?? undefined,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
-        authorizationDetails: tokenRecord.authorizationDetails,
-        client: {
-          id: tokenRecord.client.clientId,
-          grants: tokenRecord.client.grantTypes,
-          redirectUris: tokenRecord.client.redirectUris,
-        },
-        user: { id: tokenRecord.userId },
+        authorizationDetails: tokenRecord.authorizationDetails as any,
+        client: { ...client, scope: client.scope ?? undefined },
+        user: user,
       };
     },
 
-    async getRefreshToken(
-      refreshToken: string
-    ): Promise<RefreshToken | Falsey> {
+    async getRefreshToken(refreshToken: string): Promise<OAuthToken | null> {
       const tokenRecord = await db.query.oAuthToken.findFirst({
         where: eq(schema.oAuthToken.refreshToken, refreshToken),
         with: { client: true },
       });
 
-      if (!tokenRecord || !tokenRecord.refreshToken) return false;
+      if (
+        !tokenRecord ||
+        !tokenRecord.refreshToken ||
+        !tokenRecord.client
+      )
+        return null;
+
+      const { client, ...restOfToken } = tokenRecord;
+      const user = { id: tokenRecord.userId };
 
       return {
+        ...restOfToken,
+        accessToken: tokenRecord.accessToken,
+        accessTokenExpiresAt: tokenRecord.accessTokenExpiresAt,
         refreshToken: tokenRecord.refreshToken,
         refreshTokenExpiresAt: tokenRecord.refreshTokenExpiresAt ?? undefined,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
-        authorizationDetails: tokenRecord.authorizationDetails,
-        client: {
-          id: tokenRecord.client.clientId,
-          grants: tokenRecord.client.grantTypes,
-          redirectUris: tokenRecord.client.redirectUris,
-        },
-        user: { id: tokenRecord.userId },
+        authorizationDetails: tokenRecord.authorizationDetails as any,
+        client: { ...client, scope: client.scope ?? undefined },
+        user: user,
       };
     },
 
     async saveAuthorizationCode(
-      code: AuthorizationCode,
-      client: Client,
-      user: User
+      code: Pick<
+        AuthorizationCode,
+        |"authorizationCode"
+        | "expiresAt"
+        | "redirectUri"
+        | "scope"
+        | "codeChallenge"
+        | "codeChallengeMethod"
+        | "authorizationDetails"
+      >,
+      client: OAuthClient,
+      user: OAuthUser
     ): Promise<AuthorizationCode> {
-      const [dbClient] = await db
-        .select({ id: schema.oAuthClient.id })
-        .from(schema.oAuthClient)
-        .where(eq(schema.oAuthClient.clientId, client.id));
-
       const [createdCode] = await db
         .insert(schema.oAuthAuthorizationCode)
         .values({
           authorizationCode: code.authorizationCode,
           expiresAt: code.expiresAt,
           redirectUri: code.redirectUri,
-          scope: Array.isArray(code.scope)
-            ? code.scope.join(" ")
-            : code.scope || "",
-          authorizationDetails: (user as any).authorizationDetails,
+          scope: Array.isArray(code.scope) ? code.scope.join(" ") : code.scope,
+          authorizationDetails: (code as any).authorizationDetails,
+          clientId: client.id,
           userId: user.id,
-          clientId: dbClient.id,
           codeChallenge: code.codeChallenge,
           codeChallengeMethod: code.codeChallengeMethod,
         })
@@ -162,23 +173,19 @@ export function DrizzleAdapter(
 
       return {
         ...code,
-        authorizationCode: createdCode.authorizationCode,
-        expiresAt: createdCode.expiresAt,
-        redirectUri: createdCode.redirectUri,
+        ...createdCode,
         scope: createdCode.scope ? createdCode.scope.split(" ") : [],
-        authorizationDetails: createdCode.authorizationDetails,
+        authorizationDetails: createdCode.authorizationDetails as any,
+        client,
+        user,
         codeChallenge: createdCode.codeChallenge ?? undefined,
-        codeChallengeMethod:
-          (createdCode.codeChallengeMethod as "S256" | "plain" | undefined) ??
-          undefined,
-        client: client,
-        user: user,
+        codeChallengeMethod: createdCode.codeChallengeMethod ?? undefined,
       };
     },
 
     async getAuthorizationCode(
       authorizationCode: string
-    ): Promise<AuthorizationCode | Falsey> {
+    ): Promise<AuthorizationCode | null> {
       const codeRecord = await db.query.oAuthAuthorizationCode.findFirst({
         where: eq(
           schema.oAuthAuthorizationCode.authorizationCode,
@@ -187,23 +194,19 @@ export function DrizzleAdapter(
         with: { client: true },
       });
 
-      if (!codeRecord) return false;
+      if (!codeRecord || !codeRecord.client) return null;
+
+      const { client, ...restOfCode } = codeRecord;
+      const user = { id: codeRecord.userId };
 
       return {
-        authorizationCode: codeRecord.authorizationCode,
+        ...restOfCode,
         expiresAt: codeRecord.expiresAt,
         redirectUri: codeRecord.redirectUri,
         scope: codeRecord.scope ? codeRecord.scope.split(" ") : [],
-        authorizationDetails: codeRecord.authorizationDetails,
-        client: {
-          id: codeRecord.client.clientId,
-          grants: codeRecord.client.grantTypes,
-          redirectUris: codeRecord.client.redirectUris,
-        },
-        user: {
-          id: codeRecord.userId,
-          authorizationDetails: codeRecord.authorizationDetails,
-        },
+        authorizationDetails: codeRecord.authorizationDetails as any,
+        client: { ...client, scope: client.scope ?? undefined },
+        user: user,
         codeChallenge: codeRecord.codeChallenge ?? undefined,
         codeChallengeMethod:
           (codeRecord.codeChallengeMethod as "S256" | "plain" | undefined) ??
@@ -223,40 +226,15 @@ export function DrizzleAdapter(
       return (result.rowCount ?? 0) > 0;
     },
 
-    async getClientByClientId(clientId: string): Promise<OAuthClient | null> {
-      const [clientRecord] = await db
-        .select()
-        .from(schema.oAuthClient)
-        .where(eq(schema.oAuthClient.clientId, clientId));
-
-      if (!clientRecord) return null;
-
-      return {
-        ...clientRecord,
-        id: clientRecord.id,
-        clientId: clientRecord.clientId,
-        clientSecret: clientRecord.clientSecret,
-        redirectUris: clientRecord.redirectUris,
-        grantTypes: clientRecord.grantTypes,
-        scope: clientRecord.scope || undefined,
-      };
-    },
-
-    async registerClientWithHashedSecret(
-      params: ClientRegistrationRequestParams & {
-        clientId: string;
-        hashedClientSecret: string;
-        issuedAt: number;
-      },
-      actingUser?: OAuthUser | null
-    ): Promise<
-      Omit<
-        ClientRegistrationResponseData,
-        "client_secret" | "client_secret_expires_at"
-      >
-    > {
-      const { clientId, hashedClientSecret, issuedAt, ...registrationParams } =
-        params;
+    async registerClient(
+      params: ClientRegistrationRequestParams,
+      actingUser?: OAuthUser
+    ): Promise<ClientRegistrationResponseData> {
+      const clientId = crypto.randomBytes(20).toString("hex");
+      const clientSecret = crypto.randomBytes(32).toString("hex");
+      const salt = await bcrypt.genSalt(10);
+      const hashedSecret = await bcrypt.hash(clientSecret, salt);
+      const issuedAt = Math.floor(Date.now() / 1000);
       const internalId = uuid();
 
       const [newClient] = await db
@@ -264,20 +242,22 @@ export function DrizzleAdapter(
         .values({
           id: internalId,
           clientId,
-          clientSecret: hashedClientSecret,
-          name: registrationParams.client_name?.trim() || "",
-          redirectUris: registrationParams.redirect_uris || [],
-          grantTypes: registrationParams.grant_types || [
+          clientSecret: hashedSecret,
+          name: params.client_name?.trim() || "",
+          redirectUris: params.redirect_uris || [],
+          grantTypes: params.grant_types || [
             "authorization_code",
             "refresh_token",
           ],
-          scope: registrationParams.scope || "openid profile email",
+          scope: params.scope || "openid profile email",
           userId: actingUser?.id,
         })
         .returning();
 
       return {
         client_id: newClient.clientId,
+        client_secret: clientSecret,
+        client_secret_expires_at: 0,
         client_id_issued_at: issuedAt,
         client_name: newClient.name || undefined,
         redirect_uris: newClient.redirectUris,
@@ -286,28 +266,20 @@ export function DrizzleAdapter(
       };
     },
 
-    async revokeToken(params: {
-      tokenToRevoke: string;
-      tokenTypeHint?: "access_token" | "refresh_token";
-      client: OAuthClient;
-    }): Promise<boolean> {
-      const { tokenToRevoke, tokenTypeHint, client } = params;
+    async revokeToken(token: string): Promise<boolean> {
+      const accessTokenResult = await db
+        .delete(schema.oAuthToken)
+        .where(eq(schema.oAuthToken.accessToken, token));
 
-      if (!tokenTypeHint || tokenTypeHint === "access_token") {
-        const result = await db
-          .delete(schema.oAuthToken)
-          .where(eq(schema.oAuthToken.accessToken, tokenToRevoke));
-        if ((result.rowCount ?? 0) > 0) return true;
+      if ((accessTokenResult.rowCount ?? 0) > 0) {
+        return true;
       }
 
-      if (!tokenTypeHint || tokenTypeHint === "refresh_token") {
-        const result = await db
-          .delete(schema.oAuthToken)
-          .where(eq(schema.oAuthToken.refreshToken, tokenToRevoke));
-        if ((result.rowCount ?? 0) > 0) return true;
-      }
+      const refreshTokenResult = await db
+        .delete(schema.oAuthToken)
+        .where(eq(schema.oAuthToken.refreshToken, token));
 
-      return false;
+      return (refreshTokenResult.rowCount ?? 0) > 0;
     },
   };
 }

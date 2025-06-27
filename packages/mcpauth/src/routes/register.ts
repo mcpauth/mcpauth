@@ -9,6 +9,7 @@ import type {
   HttpResponse,
 } from "../core/framework-types";
 import { applyCorsToResponse } from "../lib/cors";
+import { isValidScopeString } from "../lib/scope-verification";
 
 export async function handleRegisterClient(
   request: HttpRequest,
@@ -27,6 +28,17 @@ export async function handleRegisterClient(
 
   const requestBody: Partial<ClientRegistrationRequestParams> =
     request.body || {};
+
+  if (requestBody.scope && !isValidScopeString(requestBody.scope)) {
+    return {
+      status: 400,
+      body: {
+        error: "invalid_scope",
+        error_description:
+          "The provided scope is invalid, unknown, or malformed.",
+      },
+    };
+  }
 
   // Basic validation for required fields
   if (

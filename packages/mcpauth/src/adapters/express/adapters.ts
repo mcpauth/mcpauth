@@ -8,7 +8,6 @@ import type {
 import type {
   AuthenticatedTokenData,
   AuthenticateResourceRequestOptions,
-  InternalConfig,
   SignInParams,
 } from "../../core/types";
 import { parse } from "cookie";
@@ -80,73 +79,6 @@ export async function httpResponseToExpressResponse(
   } else {
     res.end();
   }
-}
-
-/**
- * Convert InternalConfig to framework-agnostic FrameworkConfig
- */
-export function wrapInternalConfigForFramework(
-  internalConfig: InternalConfig
-): FrameworkConfig {
-  return {
-    authenticateUser: async (request: HttpRequest) => {
-      // Reconstruct a request-like object for Express-specific functions like getSession
-      const expressReq = {
-        headers: request.headers,
-        cookies: parse(request.headers['cookie'] || ''),
-      } as ExpressRequest;
-
-      return internalConfig.authenticateUser(expressReq);
-    },
-
-    signInUrl: (request: HttpRequest, callbackUrl: string) => {
-      const expressReq = {
-        headers: request.headers,
-        cookies: parse(request.headers['cookie'] || ''),
-      } as ExpressRequest;
-      return internalConfig.signInUrl(expressReq, callbackUrl);
-    },
-
-    renderConsentPage: internalConfig.renderConsentPage
-      ? async (request: HttpRequest, context) => {
-          const expressReq = {
-            headers: request.headers,
-            cookies: parse(request.headers['cookie'] || ''),
-          } as ExpressRequest;
-
-          // Unlike Next.js, Express response methods like `res.render` are void.
-          // This adapter assumes `renderConsentPage` will return an HttpResponse-like object.
-          // This may need adjustment based on the user's implementation.
-          if (typeof internalConfig.renderConsentPage === "string") {
-            const params = Buffer.from(JSON.stringify(context)).toString(
-              "base64"
-            );
-            return {
-                status: 302,
-                redirect: internalConfig.renderConsentPage + "?params=" + params
-            }
-          } 
-          
-          const result = await internalConfig.renderConsentPage!(
-            expressReq,
-            context
-          );
-
-          if (result.redirect) {
-              return { status: result.status || 302, redirect: result.redirect };
-          }
-          return {
-              status: result.status || 200,
-              headers: result.headers || {'Content-Type': 'text/html'},
-              body: result.body
-          };
-        }
-      : undefined,
-
-    adapter: internalConfig.adapter,
-    _oauthServerInstance: internalConfig._oauthServerInstance,
-    issuer: internalConfig.issuerUrl,
-  };
 }
 
 /**

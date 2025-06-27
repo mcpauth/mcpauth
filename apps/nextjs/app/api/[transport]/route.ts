@@ -6,23 +6,11 @@
  */
 
 import { createMcpHandler } from "@vercel/mcp-adapter";
-import { NextRequest, NextResponse } from "next/server";
-import { createSearchTool } from "@/server/search.tool";
+import { withMcpAuth } from "@/lib/withMcpAuth";
 import { createFetchTool } from "@/server/fetch.tool";
+import { createSearchTool } from "@/server/search.tool";
 
-import { auth as mcpAuth } from "@/mcpauth";
-
-// Main handler function for GET, POST, DELETE requests to this API route.
-const handler = async (req: NextRequest) => {
-  const session = await mcpAuth(req);
-
-  if (!session || !session.user?.id) {
-    return NextResponse.json(
-      { error: "unauthorized" },
-      { status: 401, headers: { "Content-Type": "application/json" } }
-    );
-  }
-
+const handler = withMcpAuth((req, session) => {
   // Initialize the MCP handler from `@vercel/mcp-adapter`.
   // This function takes a setup callback to define tools, capabilities, and other configurations.
   return createMcpHandler(
@@ -57,6 +45,6 @@ const handler = async (req: NextRequest) => {
       redisUrl: process.env.REDIS_URL,
     }
   )(req);
-};
+});
 
 export { handler as GET, handler as POST, handler as DELETE };

@@ -12,7 +12,7 @@ export async function handleAuthorizationServerMetadata(
   config: FrameworkConfig,
   basePath: string
 ): Promise<HttpResponse> {
-  const issuer = config.issuer;
+  const issuer = config.issuerUrl;
   const endpointBasePath = basePath; // e.g., /api/oauth
 
   const configuration = {
@@ -60,8 +60,8 @@ export async function handleProtectedResourceMetadata(
   config: FrameworkConfig,
   basePath: string
 ): Promise<HttpResponse> {
-  const authServerUrl = config.issuer;
-  const resourceUrl = config.issuer; // Assuming resource server is at the same location
+  const authServerUrl = config.issuerUrl;
+  const resourceUrl = config.issuerUrl;
 
   const configuration = {
     resource: resourceUrl,

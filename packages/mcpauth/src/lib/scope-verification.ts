@@ -1,4 +1,4 @@
-import type { Token } from '@node-oauth/oauth2-server';
+import type { OAuthToken } from "../core/types";
 
 /**
  * Scope verification utilities for OAuth 2.0 tokens.
@@ -10,24 +10,29 @@ import type { Token } from '@node-oauth/oauth2-server';
  * This is business logic that was moved out of the adapter.
  */
 export async function verifyScope(
-  token: Token,
+  token: OAuthToken,
   requiredScope: string | string[]
 ): Promise<boolean> {
+  if (!requiredScope || requiredScope.length === 0) {
+    return true;
+  }
+
   const requiredScopesArray = Array.isArray(requiredScope)
     ? requiredScope
-    : requiredScope ? [requiredScope] : [];
-  
+    : requiredScope.split(" ");
+
   if (requiredScopesArray.length === 0) return true;
 
-  const tokenScopes = Array.isArray(token.scope)
-    ? token.scope
-    : token.scope ? [token.scope] : [];
+  const tokenScopesRaw = token.scope;
+  const tokenScopes = !tokenScopesRaw
+    ? []
+    : typeof tokenScopesRaw === "string"
+    ? tokenScopesRaw.split(" ")
+    : tokenScopesRaw;
 
   if (tokenScopes.length === 0) return false;
 
-  const hasAllScopes = requiredScopesArray.every((rs) => tokenScopes.includes(rs));
-
-  return hasAllScopes;
+  return requiredScopesArray.every((rs) => tokenScopes.includes(rs));
 }
 
 /**

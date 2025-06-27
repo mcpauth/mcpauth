@@ -5,11 +5,9 @@ import type {
   FrameworkConfig,
   FormData,
 } from "../core/framework-types";
-import {
-  Request as OAuthRequest,
-  Response as OAuthResponse,
-} from "@node-oauth/oauth2-server";
+import * as crypto from "crypto";
 import { sign, verify } from "../lib/internalState";
+import { isValidScopeString } from "../lib/scope-verification";
 
 const DEFAULT_CONSENT_HTML = (
   clientName: string,
@@ -180,14 +178,33 @@ export async function handleGetAuthorize(
     };
   }
 
-  const clientId = request.searchParams.client_id;
-  const redirectUri = request.searchParams.redirect_uri;
-  const responseType = request.searchParams.response_type;
-  const scope = request.searchParams.scope;
-  const stateFromClient = request.searchParams.state;
-  const codeChallenge = request.searchParams.code_challenge;
-  const codeChallengeMethod = request.searchParams.code_challenge_method;
-  const authDetailsString = request.searchParams.authorization_details;
+  const {
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: responseType,
+    scope,
+    state: stateFromClient,
+    code_challenge: codeChallenge,
+    code_challenge_method: codeChallengeMethod,
+    authorization_details: authDetailsString,
+  } = request.searchParams;
+
+  // Validate the scope parameter.
+  // Note: The current HttpRequest abstraction does not support detecting multiple
+  // instances of the same query parameter, so we can only validate the single
+  // string value that is passed. The OAuth 2.0 spec requires a single,
+  // space-delimited string for the 'scope' parameter.
+  if (scope && !isValidScopeString(scope)) {
+    // TODO: make allowed scopes configurable
+    return {
+      status: 400,
+      body: {
+        error: "invalid_scope",
+        error_description:
+          "The requested scope is invalid, unknown, or malformed.",
+      },
+    };
+  }
 
   let authorizationDetails: AuthorizationDetails[] | undefined;
   if (authDetailsString) {
@@ -197,13 +214,13 @@ export async function handleGetAuthorize(
       if (!Array.isArray(authorizationDetails)) {
         throw new Error("'authorization_details' must be a JSON array.");
       }
-    } catch (e) {
+    } catch (e: any) {
       return {
         status: 400,
         body: {
           error: "invalid_request",
           error_description:
-            "Invalid 'authorization_details' parameter: must be a valid JSON array string.",
+            "Invalid 'authorization_details' parameter: " + e.message,
         },
       };
     }
@@ -221,13 +238,26 @@ export async function handleGetAuthorize(
   }
 
   try {
-    const client = await config.adapter.getClientByClientId(clientId);
+    if (!config.adapter.getClient) {
+      throw new Error("getClient is not implemented in the adapter.");
+    }
+    const client = await config.adapter.getClient(clientId);
     if (!client) {
       return {
         status: 400,
         body: {
           error: "invalid_client",
           error_description: "Client not found.",
+        },
+      };
+    }
+
+    if (!client.redirectUris.includes(redirectUri)) {
+      return {
+        status: 400,
+        body: {
+          error: "invalid_request",
+          error_description: "The provided redirect_uri is not valid for this client.",
         },
       };
     }
@@ -242,6 +272,7 @@ export async function handleGetAuthorize(
       // DO NOT include client's state here. It's passed separately for CSRF.
       code_challenge: codeChallenge || "",
       code_challenge_method: codeChallengeMethod || "",
+      authorization_details: authorizationDetails,
     };
     const internalStateValue = Buffer.from(
       JSON.stringify({ oauthReqInfo, iat: Date.now() })
@@ -387,105 +418,68 @@ export async function handlePostAuthorize(
   }
 
   // The oauth2-server library expects a url-encoded body. We can pass all form fields directly.
-  const body = Object.fromEntries(formData.entries());
+  try {
+    const clientId = internalStateObject.client_id as string;
+    const client = await config.adapter.getClient(clientId);
 
-  // We must also add the other required params from our internal state to the body
-  // for the library to consume.
-  body.client_id = internalStateObject.client_id;
-  body.redirect_uri = internalStateObject.redirect_uri;
-  body.response_type = internalStateObject.response_type;
-  body.scope = internalStateObject.scope;
-  body.code_challenge = internalStateObject.code_challenge;
-  body.code_challenge_method = internalStateObject.code_challenge_method;
-
-  const authDetailsString = formData.get("authorization_details");
-  let authorizationDetails: AuthorizationDetails[] | undefined;
-
-  if (authDetailsString) {
-    try {
-      authorizationDetails = JSON.parse(authDetailsString);
-    } catch (error) {
-      console.error(
-        "[handlePostAuthorize] Failed to parse authorization_details from form:",
-        error
-      );
+    if (!client) {
       return {
         status: 400,
-        body: {
-          error: "invalid_request",
-          error_description: "Invalid authorization_details parameter.",
-        },
+        body: { error: "invalid_client", error_description: "Client not found." },
       };
     }
-  }
 
-  const userWithAuthDetails = {
-    ...user,
-    authorizationDetails: authorizationDetails,
-  };
+    const authorizationCode = crypto.randomBytes(32).toString("hex");
+    const authorizationCodeLifetime =
+      config.serverOptions?.authorizationCodeLifetime || 300;
+    const expiresAt = new Date(Date.now() + authorizationCodeLifetime * 1000);
 
-  const oauthRequest = new OAuthRequest({
-    headers: {
-      ...request.headers,
-      "content-type": "application/x-www-form-urlencoded",
-    },
-    method: "POST",
-    query: {}, // Query is not used, all params are in the body
-    body: body,
-  });
+    const scope = internalStateObject.scope as string | undefined;
+    const codeChallenge = internalStateObject.code_challenge as string | undefined;
+    const codeChallengeMethod =
+      internalStateObject.code_challenge_method as string | undefined;
 
-  const oauthResponse = new OAuthResponse({});
+    const authorizationDetails = internalStateObject.authorization_details as
+      | AuthorizationDetails[]
+      | undefined;
 
-  try {
-    const code = await config._oauthServerInstance.authorize(
-      oauthRequest,
-      oauthResponse,
-      {
-        authenticateHandler: {
-          handle: async () => userWithAuthDetails,
-        },
-        allowEmptyState: !clientStateForCsrf, // Allow empty state if the client didn't provide one
-      }
-    );
-
-    if (oauthResponse.status === 302 && oauthResponse.headers?.location) {
-      return {
-        status: oauthResponse.status,
-        redirect: oauthResponse.headers.location as string,
-      };
-    }
+    const codeToSave = {
+      authorizationCode,
+      expiresAt,
+      redirectUri,
+      scope,
+      codeChallenge,
+      codeChallengeMethod,
+      authorizationDetails,
+    };
+    await config.adapter.saveAuthorizationCode(codeToSave, client, user);
 
     const successRedirectUri = new URL(redirectUri);
-    successRedirectUri.searchParams.set("code", code.authorizationCode);
-    if (clientStateForCsrf)
+    successRedirectUri.searchParams.set("code", authorizationCode);
+    if (clientStateForCsrf && typeof clientStateForCsrf === "string") {
       successRedirectUri.searchParams.set("state", clientStateForCsrf);
+    }
+
     return {
       status: 302,
       redirect: successRedirectUri.toString(),
     };
   } catch (error: any) {
-    console.error(
-      "[handlePostAuthorize] Error during _oauthServerInstance.authorize:",
-      error
-    );
-    const status = error.code || error.status || 500;
+    console.error("[handlePostAuthorize] Error during authorization:", error);
+    const status = error.code || 500;
     const errBody = {
       error: error.name || "server_error",
       error_description: error.message,
     };
 
-    if (
-      redirectUri &&
-      error.name !== "server_error" &&
-      status < 500 &&
-      error.name !== "invalid_request"
-    ) {
+    if (redirectUri && errBody.error !== "server_error") {
       try {
         const errorUrl = new URL(redirectUri);
-        errorUrl.searchParams.set("error", error.name || "oauth_error");
-        errorUrl.searchParams.set("error_description", error.message);
-        if (clientStateForCsrf)
+        errorUrl.searchParams.set("error", errBody.error);
+        errorUrl.searchParams.set("error_description", errBody.error_description);
+        if (clientStateForCsrf && typeof clientStateForCsrf === "string") {
           errorUrl.searchParams.set("state", clientStateForCsrf);
+        }
         return {
           status: 302,
           redirect: errorUrl.toString(),

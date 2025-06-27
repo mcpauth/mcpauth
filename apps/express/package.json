@@ -14,7 +14,7 @@
     "watch:css": "npm run build:css -- --watch",
     "predev": "kill -9 $(lsof -t -i:3000) || true",
     "dev": "tsx watch --env-file=.env src/server.ts & npm run watch:css",
-    "lint": "eslint src/*.ts --fix",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/*.ts --fix",
     "prettier": "prettier src/*.ts --write",
     "db:push": "drizzle-kit push",
     "db:generate": "drizzle-kit generate",

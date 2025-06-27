@@ -1,105 +1,77 @@
-import { Request as ExpressRequest, Response as ExpressResponse } from 'express';
-import type { InternalConfig } from '../../core/types';
+import { Request as ExpressRequest, Response as ExpressResponse } from "express";
 import {
   expressRequestToHttpRequest,
   httpResponseToExpressResponse,
-  wrapInternalConfigForFramework,
   ExpressFormDataAdapter,
-} from './adapters';
-import { handleGetAuthorize, handlePostAuthorize } from '../../routes/authorize';
-import { handleToken } from '../../routes/token';
-import { handleRevoke } from '../../routes/revoke';
-import { handleRegisterClient } from '../../routes/register';
+} from "./adapters";
+import { handleGetAuthorize, handlePostAuthorize } from "../../routes/authorize";
+import { handleToken } from "../../routes/token";
+import { handleRevoke } from "../../routes/revoke";
+import { handleRegisterClient } from "../../routes/register";
 import {
   handleAuthorizationServerMetadata,
   handleProtectedResourceMetadata,
   handleJwks,
-} from '../../routes/well-known';
-import { handleOptions } from '../../routes/options';
+} from "../../routes/well-known";
+import { handleOptions } from "../../routes/options";
+import { FrameworkConfig, HttpRequest, HttpResponse } from "../../core/framework-types";
 
-export function createOAuthHandler(internalConfig: InternalConfig) {
-  const wrappedConfig = wrapInternalConfigForFramework(internalConfig);
+type RouteHandler = (
+  req: HttpRequest,
+  config: FrameworkConfig,
+) => Promise<HttpResponse>;
+
+export function createOAuthHandler(config: FrameworkConfig) {
+  const router: Record<string, Record<string, RouteHandler>> = {
+    GET: {
+      authorize: handleGetAuthorize,
+      ".well-known/oauth-authorization-server": (req, config) =>
+        handleAuthorizationServerMetadata(req, config, config.issuerPath),
+      ".well-known/oauth-protected-resource": (req, config) =>
+        handleProtectedResourceMetadata(req, config, config.issuerPath),
+      ".well-known/jwks.json": handleJwks,
+    },
+    POST: {
+      authorize: (req, config) =>
+        handlePostAuthorize(req, config, req.body as ExpressFormDataAdapter),
+      token: handleToken,
+      revoke: handleRevoke,
+      register: handleRegisterClient,
+    },
+  };
 
   return async function OAuthHandler(
     req: ExpressRequest,
-    res: ExpressResponse
+    res: ExpressResponse,
   ): Promise<void> {
-    let url = new URL('http://unk' + req.originalUrl);
+    let url = new URL("http://unk" + req.originalUrl);
     let path = url.pathname;
-    const basePath = internalConfig.issuerPath;
+    const basePath = config.issuerPath;
     if (req.originalUrl.startsWith(basePath)) {
       path = path.substring(basePath.length);
     }
-    const pathSegments = path.substring(1).split('/');
-    const mainAction = pathSegments[0]?.toLowerCase();
+    const routeKey = path.startsWith("/") ? path.substring(1) : path;
 
     try {
       const httpRequest = await expressRequestToHttpRequest(req);
 
-      if (req.method === 'OPTIONS') {
+      if (req.method === "OPTIONS") {
         const response = await handleOptions(httpRequest);
         return httpResponseToExpressResponse(response, res);
       }
 
-      if (req.method === 'GET') {
-        if (mainAction === 'authorize') {
-          const response = await handleGetAuthorize(httpRequest, wrappedConfig);
-          return httpResponseToExpressResponse(response, res);
-        }
-        if (mainAction === '.well-known') {
-          const subAction = pathSegments[1];
-          if (subAction === 'oauth-authorization-server') {
-            const response = await handleAuthorizationServerMetadata(
-              httpRequest,
-              wrappedConfig,
-              internalConfig.issuerPath
-            );
-            return httpResponseToExpressResponse(response, res);
-          } else if (subAction === 'oauth-protected-resource') {
-            const response = await handleProtectedResourceMetadata(
-              httpRequest,
-              wrappedConfig,
-              internalConfig.issuerPath
-            );
-            return httpResponseToExpressResponse(response, res);
-          } else if (subAction === 'jwks.json') {
-            const response = await handleJwks(httpRequest, wrappedConfig);
-            return httpResponseToExpressResponse(response, res);
-          }
-        }
-      } else if (req.method === 'POST') {
-        if (mainAction === 'authorize') {
-          const response = await handlePostAuthorize(
-            httpRequest,
-            wrappedConfig,
-            httpRequest.body as ExpressFormDataAdapter
-          );
-          return httpResponseToExpressResponse(response, res);
-        }
-        if (mainAction === 'token') {
-          const response = await handleToken(httpRequest, wrappedConfig);
-          return httpResponseToExpressResponse(response, res);
-        }
-        if (mainAction === 'revoke') {
-          const response = await handleRevoke(httpRequest, wrappedConfig);
-          return httpResponseToExpressResponse(response, res);
-        }
-        if (mainAction === 'register') {
-          const response = await handleRegisterClient(
-            httpRequest,
-            wrappedConfig
-          );
-          return httpResponseToExpressResponse(response, res);
-        }
+      const handler = router[req.method]?.[routeKey];
+
+      if (handler) {
+        const response = await handler(httpRequest, config);
+        return httpResponseToExpressResponse(response, res);
       }
 
       const notFoundResponse = {
         status: 404,
         body: {
-          error: 'not_found',
-          message: `The requested OAuth action was not found: ${pathSegments.join(
-            '/'
-          )}`,
+          error: "not_found",
+          message: `The requested OAuth action was not found: ${routeKey}`,
         },
       };
       return httpResponseToExpressResponse(notFoundResponse, res);
@@ -108,11 +80,12 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
         status: error.status || error.code || 500,
         headers: error.headers,
         body: {
-          error: error.name || 'server_error',
-          error_description: error.message || 'An unexpected error occurred.',
+          error: error.name || "server_error",
+          error_description: error.message || "An unexpected error occurred.",
         },
       };
       return httpResponseToExpressResponse(errorResponse, res);
     }
   };
 }
+

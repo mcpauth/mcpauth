@@ -3,8 +3,8 @@
  * These types allow business logic to be separated from specific framework implementations.
  */
 
-import OAuth2Server from '@node-oauth/oauth2-server';
-import { OAuthAuthorizationRequestInfo } from './types';
+
+import { Adapter, OAuthAuthorizationRequestInfo } from './types';
 
 export interface HttpRequest {
   url: string;
@@ -43,11 +43,23 @@ export interface ConsentPageContext {
   formActionUrl: string;
 }
 
-export interface FrameworkConfig {
-  authenticateUser: (request: HttpRequest) => Promise<import('./types').OAuthUser | null>;
+export interface ServerOptions {
+  authorizationCodeLifetime?: number;
+  accessTokenLifetime?: number;
+  refreshTokenLifetime?: number;
+}
+
+export interface FrameworkConfig<Req = any, Res = any> {
+  adapter: Adapter;
+  authenticateUser: (
+    request: HttpRequest
+  ) => Promise<import("./types").OAuthUser | null>;
   signInUrl: (request: HttpRequest, callbackUrl: string) => string;
-  renderConsentPage?: (request: HttpRequest, context: OAuthAuthorizationRequestInfo) => Promise<HttpResponse>;
-  adapter: import('./types').InternalAuthAdapter;
-  _oauthServerInstance: OAuth2Server;
-  issuer: string;
+  issuerUrl: string;
+  issuerPath: string;
+  renderConsentPage?: (
+    request: HttpRequest,
+    context: OAuthAuthorizationRequestInfo
+  ) => Promise<HttpResponse>;
+  serverOptions?: ServerOptions;
 }

@@ -8,7 +8,6 @@ import type {
 import type {
   AuthenticatedTokenData,
   AuthenticateResourceRequestOptions,
-  InternalConfig,
   SignInParams,
 } from "../../core/types";
 
@@ -17,7 +16,7 @@ import type {
  */
 export async function nextRequestToHttpRequest(
   req: NextRequest
-): Promise<HttpRequest> {
+): Promise<HttpRequest> {  
   const url = new URL(req.url);
   let body: any;
 
@@ -84,78 +83,7 @@ export function httpResponseToNextResponse(
   });
 }
 
-/**
- * Convert InternalConfig to framework-agnostic FrameworkConfig
- */
-export function wrapInternalConfigForFramework(
-  internalConfig: InternalConfig
-): FrameworkConfig {
-  return {
-    authenticateUser: async (request: HttpRequest) => {
-      // Convert back to NextRequest for the authenticateUser function
-      const nextRequest = new NextRequest(request.url, {
-        method: request.method,
-        headers: request.headers,
-      });
-      return internalConfig.authenticateUser(nextRequest);
-    },
 
-    signInUrl: (request: HttpRequest, callbackUrl: string) => {
-      // Convert back to NextRequest for the signInUrl function
-      const nextRequest = new NextRequest(request.url, {
-        method: request.method,
-        headers: request.headers,
-      });
-      return internalConfig.signInUrl(nextRequest, callbackUrl);
-    },
-
-    renderConsentPage: internalConfig.renderConsentPage
-      ? async (request: HttpRequest, context) => {
-          // Convert back to NextRequest for the renderConsentPage function
-          const nextRequest = new NextRequest(request.url, {
-            method: request.method,
-            headers: request.headers,
-          });
-
-          let nextResponse: NextResponse;
-
-          if (typeof internalConfig.renderConsentPage === "string") {
-            const params = Buffer.from(JSON.stringify(context)).toString(
-              "base64"
-            );
-
-            nextResponse = NextResponse.redirect(
-              internalConfig.renderConsentPage + "?params=" + params
-            );
-          } else {
-            nextResponse = await internalConfig.renderConsentPage!(
-              nextRequest,
-              context
-            );
-          }
-
-          // Convert NextResponse back to HttpResponse
-          if (nextResponse.headers.get("location")) {
-            return {
-              status: nextResponse.status,
-              redirect: nextResponse.headers.get("location")!,
-            };
-          }
-
-          const body = await nextResponse.text();
-          return {
-            status: nextResponse.status,
-            headers: Object.fromEntries(nextResponse.headers.entries()),
-            body,
-          };
-        }
-      : undefined,
-
-    adapter: internalConfig.adapter,
-    _oauthServerInstance: internalConfig._oauthServerInstance,
-    issuer: internalConfig.issuerUrl,
-  };
-}
 
 /**
  * Framework-agnostic FormData implementation
@@ -204,6 +132,7 @@ export interface OAuthNextInstance {
       context: { params: Promise<{ route?: string[] }> }
     ) => Promise<NextResponse>;
   };
+  
   // Function to authenticate resource requests using a Bearer token.
   // Returns user data on success, null on failure (following Auth.js pattern).
   auth: (

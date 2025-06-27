@@ -3,41 +3,55 @@ import type {
   HttpRequest,
   HttpResponse,
 } from "../core/framework-types";
-import {
-  Request as OAuthRequest,
-  Response as OAuthResponse,
-} from "@node-oauth/oauth2-server";
-import { OAuthClient } from "../core/types";
+import type { OAuthClient } from "../core/types";
+
+async function authenticateClient(
+  request: HttpRequest,
+  config: FrameworkConfig
+): Promise<OAuthClient | null> {
+  const { client_id, client_secret } = request.body || {};
+  const authHeader = request.headers.authorization;
+
+  let id: string | undefined = client_id;
+  let secret: string | undefined = client_secret;
+
+  if (authHeader) {
+    const [type, credentials] = authHeader.split(" ");
+    if (type === "Basic" && credentials) {
+      const decoded = Buffer.from(credentials, "base64").toString();
+      [id, secret] = decoded.split(":");
+    }
+  }
+
+  if (!id) {
+    return null;
+  }
+
+  return config.adapter.getClient(id, secret);
+}
 
 export async function handleRevoke(
   request: HttpRequest,
   config: FrameworkConfig
 ): Promise<HttpResponse> {
-  const oauthRequest = new OAuthRequest({
-    headers: request.headers,
-    method: request.method,
-    query: request.searchParams,
-    body: request.body,
-  });
-  const oauthResponse = new OAuthResponse({});
-
   try {
-    const authenticatedClient = await config._oauthServerInstance.authenticate(
-      oauthRequest,
-      oauthResponse
-    );
+    const client = await authenticateClient(request, config);
 
-    if (!authenticatedClient) {
-      // This case is handled by the authenticate method throwing or setting oauthResponse.
-      // The catch block will handle the response generation.
-      // This check is a safeguard.
-      throw new Error("Client authentication failed.");
+    if (!client) {
+      return {
+        status: 401,
+        headers: { "WWW-Authenticate": "Basic" },
+        body: {
+          error: "invalid_client",
+          error_description:
+            "Client authentication failed (e.g., unknown client, no authentication method included, or unsupported authentication method).",
+        },
+      };
     }
 
-    const { token: tokenToRevoke, token_type_hint: rawTokenTypeHint } =
-      request.body || {};
+    const { token } = request.body || {};
 
-    if (!tokenToRevoke) {
+    if (!token) {
       return {
         status: 400,
         body: {
@@ -47,61 +61,18 @@ export async function handleRevoke(
       };
     }
 
-    let validatedTokenTypeHint: "access_token" | "refresh_token" | undefined;
-    if (rawTokenTypeHint === "access_token" || rawTokenTypeHint === "refresh_token") {
-      validatedTokenTypeHint = rawTokenTypeHint;
-    }
-
-    if (!config.adapter.revokeToken) {
-      return {
-        status: 501,
-        body: {
-          error: "not_implemented",
-          error_description: "Token revocation is not configured for this server.",
-        },
-      };
-    }
-
-    // The authenticate method returns a client from oauth2-server, but our adapter needs our own OAuthClient type.
-    const clientDetails = await config.adapter.getClientByClientId(
-      authenticatedClient.id
-    );
-    if (!clientDetails) {
-      return {
-        status: 401,
-        body: {
-          error: "invalid_client",
-          error_description: "Authenticated client not found in system.",
-        },
-      };
-    }
-
-    await config.adapter.revokeToken({
-      tokenToRevoke,
-      tokenTypeHint: validatedTokenTypeHint,
-      client: clientDetails,
-    });
+    await config.adapter.revokeToken(token);
 
     // RFC 7009: return 200 OK on success, body is empty.
     return { status: 200, body: "", headers: { "Content-Length": "0" } };
   } catch (error: any) {
     console.error("[handleRevoke] Error during token revocation:", error);
-
-    const status =
-      oauthResponse.status && oauthResponse.status >= 400
-        ? oauthResponse.status
-        : error.status || error.code || 500;
-
-    const body = oauthResponse.body || {
-      error: error.name || "server_error",
-      error_description:
-        error.message || "An unexpected error occurred during revocation.",
-    };
-
     return {
-      status,
-      headers: oauthResponse.headers as Record<string, string>,
-      body,
+      status: 500,
+      body: {
+        error: "server_error",
+        error_description: "An unexpected error occurred during revocation.",
+      },
     };
   }
 }

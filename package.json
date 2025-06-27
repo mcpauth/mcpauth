@@ -16,7 +16,9 @@
     "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
-    "@types/cookie": "^0.6.0",
+    "@typescript-eslint/eslint-plugin": "^8.35.0",
+    "@typescript-eslint/parser": "^8.35.0",
+    "eslint": "^9.29.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0"
   }

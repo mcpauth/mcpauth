@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { InternalConfig } from "../../core/types";
+import { FrameworkConfig } from "../../core/framework-types";
 import {
   nextRequestToHttpRequest,
   httpResponseToNextResponse,
-  wrapInternalConfigForFramework,
   NextFormDataAdapter,
 } from "./adapters";
 import { handleGetAuthorize, handlePostAuthorize } from "../../routes/authorize";
@@ -16,9 +15,32 @@ import {
   handleJwks,
 } from "../../routes/well-known";
 import { handleOptions } from "../../routes/options";
+import { HttpRequest, HttpResponse } from "../../core/framework-types";
 
-export function createOAuthHandler(internalConfig: InternalConfig) {
-  const wrappedConfig = wrapInternalConfigForFramework(internalConfig);
+type RouteHandler = (
+  req: HttpRequest,
+  config: FrameworkConfig
+) => Promise<HttpResponse>;
+
+export function createOAuthHandler(config: FrameworkConfig) {
+
+  const router: Record<string, Record<string, RouteHandler>> = {
+    GET: {
+      authorize: handleGetAuthorize,
+      ".well-known/oauth-authorization-server": (req, config) =>
+        handleAuthorizationServerMetadata(req, config, config.issuerPath),
+      ".well-known/oauth-protected-resource": (req, config) =>
+        handleProtectedResourceMetadata(req, config, config.issuerPath),
+      ".well-known/jwks.json": handleJwks,
+    },
+    POST: {
+      authorize: (req, config) =>
+        handlePostAuthorize(req, config, req.body as NextFormDataAdapter),
+      token: handleToken,
+      revoke: handleRevoke,
+      register: handleRegisterClient,
+    },
+  };
 
   return async function OAuthHandler(
     req: NextRequest,
@@ -26,7 +48,6 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
   ): Promise<NextResponse> {
     const params = await context.params;
     const pathSegments = params.route || [];
-    const mainAction = pathSegments[0]?.toLowerCase();
 
     try {
       const httpRequest = await nextRequestToHttpRequest(req);
@@ -36,57 +57,12 @@ export function createOAuthHandler(internalConfig: InternalConfig) {
         return httpResponseToNextResponse(response);
       }
 
-      if (req.method === "GET") {
-        if (mainAction === "authorize") {
-          const response = await handleGetAuthorize(httpRequest, wrappedConfig);
-          return httpResponseToNextResponse(response);
-        }
-        if (mainAction === ".well-known") {
-          const subAction = pathSegments[1];
-          if (subAction === "oauth-authorization-server") {
-            const response = await handleAuthorizationServerMetadata(
-              httpRequest,
-              wrappedConfig,
-              internalConfig.issuerPath
-            );
-            return httpResponseToNextResponse(response);
-          } else if (subAction === "oauth-protected-resource") {
-            const response = await handleProtectedResourceMetadata(
-              httpRequest,
-              wrappedConfig,
-              internalConfig.issuerPath
-            );
-            return httpResponseToNextResponse(response);
-          } else if (subAction === "jwks.json") {
-            const response = await handleJwks(httpRequest, wrappedConfig);
-            return httpResponseToNextResponse(response);
-          }
-        }
-      } else if (req.method === "POST") {
-        if (mainAction === "authorize") {
-          // The body is parsed in nextRequestToHttpRequest and available on httpRequest.body
-          const response = await handlePostAuthorize(
-            httpRequest,
-            wrappedConfig,
-            httpRequest.body as NextFormDataAdapter
-          );
-          return httpResponseToNextResponse(response);
-        }
-        if (mainAction === "token") {
-          const response = await handleToken(httpRequest, wrappedConfig);
-          return httpResponseToNextResponse(response);
-        }
-        if (mainAction === "revoke") {
-          const response = await handleRevoke(httpRequest, wrappedConfig);
-          return httpResponseToNextResponse(response);
-        }
-        if (mainAction === "register") {
-          const response = await handleRegisterClient(
-            httpRequest,
-            wrappedConfig
-          );
-          return httpResponseToNextResponse(response);
-        }
+      const routeKey = pathSegments.join("/");
+      const handler = router[req.method]?.[routeKey];
+
+      if (handler) {
+        const response = await handler(httpRequest, config);
+        return httpResponseToNextResponse(response);
       }
 
       const notFoundResponse = {
