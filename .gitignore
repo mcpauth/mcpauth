@@ -102,7 +102,6 @@ dist/
 
 # Gatsby build output
 .cache/
-public/
 
 # Docusaurus build output
 .docusaurus/
