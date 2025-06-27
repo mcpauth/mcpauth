@@ -1,0 +1,89 @@
+---
+title: Express Adapter
+description: Using @mcpauth/auth with Express
+---
+
+# Express Adapter
+
+## 1. Install dependencies
+
+```bash
+npm install @mcpauth/auth @vercel/mcp-adapter express
+```
+
+## 2. Configure `mcpAuth`
+
+Create a configuration file at `src/config/mcpAuth.config.ts`.
+
+```ts
+// src/config/mcpAuth.config.ts
+import { McpAuth } from "@mcpauth/auth/adapters/express";
+import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
+import { db } from "./db.js"; // Your Drizzle instance
+import { authConfig } from "./auth.config.js"; // Your existing auth config
+import { getSession } from "@auth/express";
+import type { Request } from "express";
+import type { OAuthUser } from "@mcpauth/auth";
+
+export const mcpAuthConfig = {
+  adapter: DrizzleAdapter(db), // Or PrismaAdapter(prisma)
+  issuerUrl: process.env.BASE_URL || "http://localhost:3000",
+  issuerPath: "/api/oauth",
+
+  serverOptions: {
+    accessTokenLifetime: 3600, // 1 hour
+    refreshTokenLifetime: 1209600, // 14 days
+  },
+
+  authenticateUser: async (request: Request) => {
+    const session = await getSession(request, authConfig);
+    return (session?.user as OAuthUser) ?? null;
+  },
+};
+
+export const mcpAuth = McpAuth(mcpAuthConfig);
+```
+
+## 3. Register Routes
+
+In your main application file (e.g., `app.ts`), register the `mcpAuth` handler as middleware.
+
+```ts
+// app.ts
+import express from "express";
+import { mcpAuth } from "./config/mcpAuth.config.js";
+
+const app = express();
+
+// ... other middleware
+
+app.use("/api/oauth/", mcpAuth);
+app.use("/.well-known/*", mcpAuth);
+
+// ... other routes
+```
+
+## 4. Secure an MCP endpoint
+
+```ts
+import { Router } from "express";
+import { createMcpHandler } from "@vercel/mcp-adapter";
+import { getMcpSession } from "@mcpauth/auth";
+import { mcpAuthConfig } from "./config/mcpAuth.config.js";
+
+export const mcpRouter = Router();
+
+mcpRouter.post("/", async (req, res) => {
+  const session = await getMcpSession(mcpAuthConfig)(req);
+  if (!session) {
+    return res.status(401).send("Unauthorized");
+  }
+  return createMcpHandler(async server => {
+    // define tools & capabilities
+  })(req, res);
+});
+```
+
+---
+
+Next: [Drizzle Store ➡️](/docs/database-drizzle)

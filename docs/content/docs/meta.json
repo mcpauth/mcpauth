@@ -1,0 +1,20 @@
+{
+  "title": "MCP Auth Docs",
+  "description": "Official documentation for @mcpauth/auth",
+  "icon": "Book",
+  "root": true,
+  "pages": [
+    "---Getting Started---",
+    "index",
+    "installation",
+    "configuration",
+    "---Adapters---",
+    "adapters-nextjs",
+    "adapters-express",
+    "---Stores---",
+    "database-drizzle",
+    "database-prisma",
+    "---Advanced---",
+    "advanced"
+  ]
+}

@@ -1,0 +1,38 @@
+---
+title: Advanced Topics
+description: Custom sign-in pages, server options, and extending adapters
+---
+
+# Advanced Topics
+
+## Custom Sign-In Page
+
+Override OAuth’s default login experience by supplying `signInUrl`:
+
+```ts
+signInUrl: (req, callbackUrl) => `/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+```
+
+## Tuning Server Options
+
+```ts
+serverOptions: {
+  accessTokenLifetime: 3600,        // 1 h
+  refreshTokenLifetime: 14 * 24 * 3600, // 14 days
+  allowBearerTokensInQueryString: true,
+}
+```
+
+## Adding a New Adapter
+
+Adapters are thin wrappers around the core provider. To add **Fastify** support for example:
+
+```ts
+import { McpAuthCore } from "@mcpauth/auth";
+export const FastifyAdapter = (fastifyInstance) => (options) => {
+  const provider = McpAuthCore(options);
+  // map fastify req/res to provider
+};
+```
+
+PRs welcome!

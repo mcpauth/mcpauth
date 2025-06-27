@@ -1,0 +1,108 @@
+---
+title: Next.js Adapter
+description: Using @mcpauth/auth with Next.js App Router
+---
+
+# Next.js Adapter
+
+This guide demonstrates how to integrate `@mcpauth/auth` inside a **Next.js (App Router)** project.
+
+## 1. Install dependencies
+
+```bash
+npm install @mcpauth/auth @vercel/mcp-adapter
+```
+
+## 2. Initialize the provider
+
+Create a file at `lib/oauth.ts` to configure the provider.
+
+```ts
+// lib/oauth.ts
+import { McpAuth } from "@mcpauth/auth/adapters/next";
+import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
+import { db } from "./db"; // Your Drizzle instance
+import { auth as nextAuth } from "./auth"; // Your existing NextAuth.js instance
+import type { OAuthUser } from "@mcpauth/auth";
+import { NextRequest } from "next/server";
+
+export const { handlers, auth } = McpAuth({
+  adapter: DrizzleAdapter(db), // Or PrismaAdapter(prisma)
+  issuerUrl: process.env.NEXT_PUBLIC_BASE_URL!,
+  issuerPath: "/api/oauth",
+
+  serverOptions: {
+    accessTokenLifetime: 3600, // 1 hour
+    refreshTokenLifetime: 1209600, // 14 days
+  },
+
+  authenticateUser: async (request: NextRequest) => {
+    const session = await nextAuth();
+    return (session?.user as OAuthUser) ?? null;
+  },
+});
+```
+
+## 3. Create the API Route
+
+Create a catch-all API route at `app/api/oauth/[...route]/route.ts` to handle all OAuth requests.
+
+```ts
+// app/api/oauth/[...route]/route.ts
+import { handlers } from "@/lib/oauth";
+export const { GET, POST, OPTIONS } = handlers;
+```
+
+## 4. Configure Rewrites
+
+To serve the `.well-known` discovery endpoints required by OAuth, add a rewrite rule to your `next.config.mjs` (or `.js`).
+
+```javascript
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/:slug*',
+        destination: '/api/oauth/.well-known/:slug*',
+      },
+    ];
+  },
+};
+
+export default nextConfig;
+```
+
+## 5. Protect an MCP Endpoint
+
+Finally, use the `auth` function exported from `lib/oauth.ts` to protect your MCP API routes.
+
+```ts
+// app/api/mcp/[...transport]/route.ts
+import { createMcpHandler } from "@vercel/mcp-adapter";
+import { NextRequest, NextResponse } from "next/server";
+import { auth as mcpAuth } from "@/lib/oauth";
+
+const handler = async (req: NextRequest) => {
+  const session = await mcpAuth(req);
+
+  if (!session) {
+    return NextResponse.json(
+      { error: "unauthorized" },
+      { status: 401, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const mcpHandler = createMcpHandler({
+    // ... your MCP configuration
+  });
+
+  return mcpHandler(req);
+};
+
+export { handler as GET, handler as POST };
+```
+
+---
+
+Next: [Express Adapter ➡️](/docs/adapters-express)

@@ -1,0 +1,48 @@
+---
+title: Overview
+description: Introduction and feature overview for @mcpauth/auth
+---
+
+import Cards from "@/components/Cards"
+import Card from "@/components/Card"
+
+# Welcome to **@mcpauth/auth**
+
+A full-featured, self-hosted OAuth&nbsp;2.0 server purpose-built for the Model-Context-Protocol (MCP) ecosystem.
+
+## Why @mcpauth/auth?
+
+| | |
+| --- | --- |
+| **Self-Hosted** | Own your data and authentication flow. No SaaS vendor lock-in. |
+| **MCP-Ready** | Required by modern MCP clients (e.g. ChatGPT) for secure tool access. |
+| **Plugs Into Existing Auth** | Use the `authenticateUser` callback to bridge any cookie, session or token system. |
+| **Framework Adapters** | Official **Next.js** and **Express** adapters – more coming. |
+| **Database Stores** | Works with **Prisma** & **Drizzle** out-of-the-box. |
+| **Extensible & OSS** | 100 % open-source. Request or build new adapters & stores. |
+
+## Live Demo
+
+Check out the live demo of `@mcpauth/auth` in action, deployed on Vercel:
+
+[**mcpauth-nextjs.vercel.app**](https://mcpauth-nextjs.vercel.app/)
+
+The source code for this demo is available in the `apps/nextjs` directory of the [GitHub repository](https://github.com/mcpauth/mcpauth).
+
+## Quick Install
+
+```bash
+npm install @mcpauth/auth
+```
+
+Ready to dive in? Start with **Installation** below or jump directly to an adapter guide.
+
+<Cards>
+  <Card title="Installation" href="/docs/installation" />
+  <Card title="Configuration" href="/docs/configuration" />
+  <Card title="Next.js Adapter" href="/docs/adapters-nextjs" />
+  <Card title="Express Adapter" href="/docs/adapters-express" />
+  <Card title="Drizzle Store" href="/docs/database-drizzle" />
+  <Card title="Prisma Store" href="/docs/database-prisma" />
+  <Card title="GitHub Repo" href="https://github.com/mcpauth/mcpauth" />
+</Cards>

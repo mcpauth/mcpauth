@@ -1,0 +1,43 @@
+---
+title: Installation
+description: Install and bootstrap @mcpauth/auth in any Node.js project
+---
+
+# Installation
+
+This guide walks you through the **minimal** steps to spin-up `@mcpauth/auth` in your project.
+
+## 1. Install the package
+
+```bash
+npm install @mcpauth/auth
+```
+
+## 2. Set environment variables
+
+Create a `.env` (or `.env.local` for Next.js) and add the following variables:
+
+```bash
+# Comma-separated list of allowed origins for the OAuth flow
+OAUTH_ALLOWED_ORIGIN="http://localhost:3000,http://localhost:6274"
+
+# Base URL of your application
+BASE_URL="http://localhost:3000" # Or NEXT_PUBLIC_BASE_URL for Next.js
+
+# Secret used to sign the `state` parameter
+INTERNAL_STATE_SECRET=<openssl rand -hex 32>
+
+# Private key used to sign JWTs – must begin with BEGIN PRIVATE KEY
+OAUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+```
+
+> See the **Configuration** page for a full list of tunable options.
+
+## 3. Choose an adapter & store
+
+* **Framework adapter** – e.g. `next`, `express` (see dedicated pages).
+* **Database store** – e.g. **Drizzle** or **Prisma** (see Database Stores).
+
+---
+
+Next: [Configuration ➡️](/docs/configuration)

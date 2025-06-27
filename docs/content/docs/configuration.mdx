@@ -1,0 +1,60 @@
+---
+title: Configuration
+description: Environment variables and provider options for @mcpauth/auth
+---
+
+# Configuration
+
+`@mcpauth/auth` is highly configurable. This page documents **environment variables**, **provider options**, and **server options**.
+
+## Environment Variables
+
+| Variable | Required | Description |
+| --- | :---: | --- |
+| `OAUTH_ALLOWED_ORIGIN` | ✅ | Comma-separated list of origins allowed to use your OAuth server. |
+| `BASE_URL` / `NEXT_PUBLIC_BASE_URL` | ✅ | The fully-qualified base URL of your app. |
+| `INTERNAL_STATE_SECRET` | ✅ | Secret for signing the `state` param during OAuth flow. |
+| `OAUTH_PRIVATE_KEY` | ✅ | Private key for signing JWTs. Must be **PEM** formatted. |
+| `ISSUER_PATH` |  | Path prefix for the OAuth endpoints (default: `/api/oauth`). |
+
+## Provider Options
+
+All adapters ultimately consume the same core provider options:
+
+```ts
+interface ProviderOptions {
+  adapter: StoreAdapter;        // PrismaAdapter | DrizzleAdapter | ...
+  issuerUrl: string;            // e.g. process.env.BASE_URL
+  issuerPath?: string;          // default: /api/oauth
+  authenticateUser: (req) => Promise<OAuthUser | null>;
+  signInUrl?: (req, cb: string) => string; // Optional custom login page
+  serverOptions?: ServerOptions; // see below
+}
+```
+
+### `authenticateUser`
+
+This callback bridges **your existing user auth** to the OAuth flow. Return a user object if the request is authenticated, otherwise `null`.
+
+```ts
+const mcpAuth = McpAuth({
+  ...options,
+  authenticateUser: async (req) => {
+    // Example: using a session manager like NextAuth.js or Express Session
+    const session = await getSession(req);
+    return (session?.user as OAuthUser) ?? null;
+  },
+});
+```
+
+## Server Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `accessTokenLifetime` | `3600` | Lifetime of access tokens (seconds). |
+| `refreshTokenLifetime` | `1209600` | Lifetime of refresh tokens (seconds). |
+| `allowBearerTokensInQueryString` | `false` | RFC6750 non-compliant but sometimes required. |
+
+---
+
+Next: [Next.js Adapter ➡️](/docs/adapters-nextjs)

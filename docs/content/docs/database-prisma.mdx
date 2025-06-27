@@ -1,0 +1,94 @@
+---
+title: Prisma Store
+description: Setup and schema for the Prisma store adapter.
+---
+
+# Prisma Store
+
+The `PrismaAdapter` allows you to use `mcpauth` with a Prisma-compatible database.
+
+## 1. Installation
+
+First, install the necessary packages. You'll need `@prisma/client` and the `prisma` CLI.
+
+```bash
+npm install @prisma/client
+npm install -D prisma
+```
+
+## 2. Usage
+
+Import the adapter and pass your Prisma client instance to it in your `mcpAuth` configuration.
+
+```ts
+import { PrismaAdapter } from "@mcpauth/auth/stores/prisma";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+export const { auth, GET, POST } = mcpAuth({
+  // ... other options
+  adapter: PrismaAdapter(prisma),
+});
+```
+
+## 3. Schema
+
+Add the following models to your `schema.prisma` file when using the `PrismaAdapter`.
+
+```prisma
+model OAuthClient {
+  id           String   @id @default(cuid())
+  clientId     String   @unique
+  clientSecret String
+  name         String
+  description  String?
+  logoUri      String?
+  redirectUris String[]
+  grantTypes   String[]
+  scope        String?
+
+  userId String?
+
+  authorizationCodes OAuthAuthorizationCode[]
+  tokens             OAuthToken[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model OAuthAuthorizationCode {
+  authorizationCode   String   @id
+  expiresAt           DateTime
+  redirectUri         String
+  scope               String?
+  authorizationDetails Json?
+  codeChallenge       String?
+  codeChallengeMethod String?
+
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+model OAuthToken {
+  accessToken           String    @id
+  accessTokenExpiresAt  DateTime
+  refreshToken          String?   @unique
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  authorizationDetails  Json?
+
+  client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  clientId String
+
+  userId String
+
+  createdAt DateTime @default(now())
+}
+```
+
+> **Note:** The schema provided is for PostgreSQL. While other database providers may be compatible, they are not officially tested or supported at this time.

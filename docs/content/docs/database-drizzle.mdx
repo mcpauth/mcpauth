@@ -1,0 +1,109 @@
+---
+title: Drizzle Store
+description: Setup and schema for the Drizzle store adapter.
+---
+
+# Drizzle Store
+
+The `DrizzleAdapter` allows you to use `mcpauth` with a Drizzle-compatible database.
+
+## 1. Installation
+
+First, install the necessary packages. You'll need `drizzle-orm`, a database driver (like `pg` for Postgres), and `drizzle-kit` for schema management.
+
+```bash
+npm install drizzle-orm pg
+npm install -D drizzle-kit
+```
+
+## 2. Usage
+
+Import the adapter and pass your Drizzle instance to it in your `mcpAuth` configuration.
+
+```ts
+import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
+// ... your other imports and db setup
+
+export const { auth, GET, POST } = mcpAuth({
+  // ... other options
+  adapter: DrizzleAdapter(db),
+});
+```
+
+## 3. Schema
+
+Below is the **complete** Postgres schema required by the `DrizzleAdapter`. You can copy-paste this into your `schema.ts` (or equivalent) and run `drizzle-kit push` or your preferred migration tool.
+
+```typescript
+import { pgTable, varchar, text, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+export const oAuthClient = pgTable("oauth_client", {
+  id: varchar("id", { length: 255 }).primaryKey(),
+  clientId: varchar("client_id", { length: 255 }).unique().notNull(),
+  clientSecret: varchar("client_secret", { length: 255 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  logoUri: text("logo_uri"),
+  redirectUris: text("redirect_uris").array().notNull(),
+  grantTypes: text("grant_types").array().notNull(),
+  scope: text("scope"),
+  userId: varchar("user_id", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
+  authorizationCode: varchar("authorization_code", { length: 255 }).primaryKey(),
+  expiresAt: timestamp("expires_at").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  scope: text("scope"),
+  authorizationDetails: jsonb("authorization_details"),
+  codeChallenge: text("code_challenge"),
+  codeChallengeMethod: text("code_challenge_method"),
+  clientId: varchar("client_id", { length: 255 })
+    .notNull()
+    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const oAuthToken = pgTable("oauth_token", {
+  accessToken: varchar("access_token", { length: 255 }).primaryKey(),
+  accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
+  refreshToken: varchar("refresh_token", { length: 255 }).unique(),
+  refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+  scope: text("scope"),
+  authorizationDetails: jsonb("authorization_details"),
+  clientId: varchar("client_id", { length: 255 })
+    .notNull()
+    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+  userId: varchar("user_id", { length: 255 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// Relations ---------------------------------------------------
+export const oAuthClientRelations = relations(oAuthClient, ({ many }) => ({
+  authorizationCodes: many(oAuthAuthorizationCode),
+  tokens: many(oAuthToken),
+}));
+
+export const oAuthAuthorizationCodeRelations = relations(
+  oAuthAuthorizationCode,
+  ({ one }) => ({
+    client: one(oAuthClient, {
+      fields: [oAuthAuthorizationCode.clientId],
+      references: [oAuthClient.id],
+    }),
+  }),
+);
+
+export const oAuthTokenRelations = relations(oAuthToken, ({ one }) => ({
+  client: one(oAuthClient, {
+    fields: [oAuthToken.clientId],
+    references: [oAuthClient.id],
+  }),
+}));
+```
+
+> **Note:** The schema provided is for PostgreSQL. While other SQL databases may be compatible, they are not officially tested or supported at this time.
