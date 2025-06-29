@@ -4,6 +4,10 @@ This example application demonstrates how to use `@mcpauth/auth` with Express.
 
 This example is based on the Express example from `next-auth`. You can find the original example [here](https://github.com/nextauthjs/next-auth/tree/main/apps/examples/express).
 
+### Demo
+
+https://mcpauth-express.vercel.app/
+
 ### Features
 
 - A streaming HTTP MCP server is available at the `/mcp` endpoint.
