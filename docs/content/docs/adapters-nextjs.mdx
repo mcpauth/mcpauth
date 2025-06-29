@@ -68,11 +68,6 @@ const nextConfig = {
         source: "/.well-known/:slug*",
         destination: "/api/oauth/.well-known/:slug*",
       },
-      // Add this rewrite for clients that don't auto-redirect
-      {
-        source: "/authorize",
-        destination: "/api/oauth/authorize",
-      },
     ];
   },
 };

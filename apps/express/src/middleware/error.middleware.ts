@@ -1,6 +1,6 @@
 // @ts-nocheck
 import type { NextFunction, Request, Response } from "express"
-import { HttpError, NotFoundError } from "../errors"
+import { HttpError, NotFoundError } from "../errors.js"
 
 export const errorHandler = (
   err: HttpError | Error,
