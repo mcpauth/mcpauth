@@ -43,13 +43,13 @@ async function handleAuthorizationCodeGrant(
     };
   }
 
-  if (!client_secret) {
-    throw {
-      status: 401,
-      error: "invalid_client",
-      error_description: "Client authentication failed: missing client_secret.",
-    };
-  }
+  // if (!client_secret) {
+  //   throw {
+  //     status: 401,
+  //     error: "invalid_client",
+  //     error_description: "Client authentication failed: missing client_secret.",
+  //   };
+  // }
 
   const client = await config.adapter.getClient(client_id, client_secret);
   if (!client) {

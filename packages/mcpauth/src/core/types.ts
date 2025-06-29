@@ -73,7 +73,6 @@ export interface Adapter {
     clientId: string,
     clientSecret?: string | null
   ): Promise<OAuthClient | null>;
-  getUser(userId: string): Promise<OAuthUser | null>;
 }
 
 export interface ClientRegistrationRequestParams {

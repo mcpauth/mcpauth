@@ -19,30 +19,6 @@ import { mcpAuth } from "./config/mcpAuth.config.js";
 import * as pug from "pug";
 import { mcpRouter } from "./routes/mcp.js";
 
-import fs from "node:fs";
-
-
-const topDir = path.join(import.meta.dirname, "..", "..");
-if (fs.existsSync(topDir)) {
-  console.log({ topDirContents: fs.readdirSync(topDir) });
-} else {
-  console.log(`Directory not found: ${topDir}`);
-}
-
-const viewsDir = path.join(import.meta.dirname, "..");
-if (fs.existsSync(viewsDir)) {
-  console.log({ viewsDirContents: fs.readdirSync(viewsDir) });
-} else {
-  console.log(`Directory not found: ${viewsDir}`);
-}
-
-const currDir = path.join(import.meta.dirname);
-if (fs.existsSync(currDir)) {
-  console.log({ currDirContents: fs.readdirSync(currDir) });
-} else {
-  console.log(`Directory not found: ${currDir}`);
-}
-
 export const app = express()
 
 app.set("port", process.env.PORT || 3000)
@@ -67,17 +43,46 @@ app.use(express.static(path.join(import.meta.dirname, "..", "public")))
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
-// Global request logger
+// Global request and response logger
 app.use((req, res, next) => {
-  console.log(`
-[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log('Headers:', req.headers);
-  if (Object.keys(req.body).length > 0) {
-    console.log('Body:', req.body);
+  const start = Date.now();
+  // Log request
+  console.log(`\n--- Start Request: ${req.method} ${req.originalUrl} ---`);
+  console.log(`[${new Date().toISOString()}]`);
+  console.log('Request Headers:', req.headers);
+  if (req.body && Object.keys(req.body).length > 0) {
+    console.log('Request Body:', req.body);
   }
-  if (Object.keys(req.query).length > 0) {
-    console.log('Query:', req.query);
+  if (req.query && Object.keys(req.query).length > 0) {
+    console.log('Request Query:', req.query);
   }
+
+  const originalSend = res.send;
+  let responseBody: any;
+  // @ts-ignore
+  res.send = function(body) {
+    responseBody = body;
+    // @ts-ignore
+    return originalSend.apply(this, arguments);
+  };
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`\n--- End Request: ${req.method} ${req.originalUrl} ---`);
+    console.log(`Status: ${res.statusCode} | Duration: ${duration}ms`);
+    console.log('Response Headers:', res.getHeaders());
+    if (responseBody) {
+      try {
+        const parsedBody = JSON.parse(responseBody);
+        console.log('Response Body:', parsedBody);
+      } catch (e) {
+        const bodyStr = responseBody.toString();
+        const truncatedBody = bodyStr.slice(0, 500) + (bodyStr.length > 500 ? '...' : '');
+        console.log('Response Body (raw):', truncatedBody);
+      }
+    }
+  });
+
   next();
 });
 

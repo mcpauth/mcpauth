@@ -19,11 +19,6 @@ export function DrizzleAdapter(client: PgDatabase<PgQueryResultHKT, any>): Adapt
   const db = client as NodePgDatabase<typeof schema>;
 
   return {
-    async getUser(userId: string): Promise<OAuthUser | null> {
-      // oAuthUser table is removed, so we can't query for a user.
-      // We will assume the user exists and return a minimal user object.
-      return { id: userId };
-    },
     async getClient(
       clientId: string,
       clientSecret?: string

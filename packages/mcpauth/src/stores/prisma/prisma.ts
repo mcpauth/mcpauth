@@ -81,12 +81,8 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         return null;
       }
 
-      const user = await prisma.user.findUnique({where: {id: tokenRecord.userId}});
-      if (!user) {
-        return null;
-      }
-
       const { client, ...restOfToken } = tokenRecord;
+      const user: OAuthUser = { id: tokenRecord.userId };
 
       return {
         ...restOfToken,
@@ -115,12 +111,8 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         return null;
       }
 
-      const user = await prisma.user.findUnique({where: {id: tokenRecord.userId}});
-      if (!user) {
-        return null;
-      }
-
       const { client, ...restOfToken } = tokenRecord;
+      const user: OAuthUser = { id: tokenRecord.userId };
 
       return {
         ...restOfToken,
@@ -190,10 +182,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         include: { client: true },
       });
 
-      if (!codeRecord || !codeRecord.client) return null;
-
-      const user = await prisma.user.findUnique({where: {id: codeRecord.userId}});
-      if (!user) {
+      if (!codeRecord || !codeRecord.client) {
         return null;
       }
 
@@ -201,6 +190,8 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         ...codeRecord.client,
         scope: codeRecord.client.scope ?? undefined,
       };
+
+      const user: OAuthUser = { id: codeRecord.userId };
 
       return {
         authorizationCode: codeRecord.authorizationCode,
@@ -279,8 +270,5 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       };
     },
 
-    async getUser(userId: string): Promise<OAuthUser | null> {
-      return prisma.user.findUnique({ where: { id: userId } });
-    },
   };
 }

@@ -1,4 +1,8 @@
-import type { OAuthUser, OAuthClient, AuthorizationDetails } from "../core/types";
+import type {
+  OAuthUser,
+  OAuthClient,
+  AuthorizationDetails,
+} from "../core/types";
 import type {
   HttpRequest,
   HttpResponse,
@@ -257,12 +261,19 @@ export async function handleGetAuthorize(
         status: 400,
         body: {
           error: "invalid_request",
-          error_description: "The provided redirect_uri is not valid for this client.",
+          error_description:
+            "The provided redirect_uri is not valid for this client.",
         },
       };
     }
 
-    const formActionUrl = request.url;
+    const incomingUrl = new URL(request.url);
+    // TODO123
+    const formActionUrl = new URL(
+      incomingUrl.pathname + incomingUrl.search,
+      config.issuerUrl
+    ).toString();
+    console.log("formActionUrl", formActionUrl);
 
     const oauthReqInfo = {
       response_type: responseType,
@@ -388,8 +399,6 @@ export async function handlePostAuthorize(
 
   const allow = formData.get("allow") === "true";
 
-
-
   // Extract redirectUri from the trusted internal state for security
   const redirectUri = internalStateObject.redirect_uri as string;
 
@@ -417,7 +426,6 @@ export async function handlePostAuthorize(
     };
   }
 
-  // The oauth2-server library expects a url-encoded body. We can pass all form fields directly.
   try {
     const clientId = internalStateObject.client_id as string;
     const client = await config.adapter.getClient(clientId);
@@ -425,7 +433,10 @@ export async function handlePostAuthorize(
     if (!client) {
       return {
         status: 400,
-        body: { error: "invalid_client", error_description: "Client not found." },
+        body: {
+          error: "invalid_client",
+          error_description: "Client not found.",
+        },
       };
     }
 
@@ -435,9 +446,12 @@ export async function handlePostAuthorize(
     const expiresAt = new Date(Date.now() + authorizationCodeLifetime * 1000);
 
     const scope = internalStateObject.scope as string | undefined;
-    const codeChallenge = internalStateObject.code_challenge as string | undefined;
-    const codeChallengeMethod =
-      internalStateObject.code_challenge_method as string | undefined;
+    const codeChallenge = internalStateObject.code_challenge as
+      | string
+      | undefined;
+    const codeChallengeMethod = internalStateObject.code_challenge_method as
+      | string
+      | undefined;
 
     const authorizationDetails = internalStateObject.authorization_details as
       | AuthorizationDetails[]
@@ -476,7 +490,10 @@ export async function handlePostAuthorize(
       try {
         const errorUrl = new URL(redirectUri);
         errorUrl.searchParams.set("error", errBody.error);
-        errorUrl.searchParams.set("error_description", errBody.error_description);
+        errorUrl.searchParams.set(
+          "error_description",
+          errBody.error_description
+        );
         if (clientStateForCsrf && typeof clientStateForCsrf === "string") {
           errorUrl.searchParams.set("state", clientStateForCsrf);
         }
