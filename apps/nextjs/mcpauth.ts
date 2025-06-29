@@ -9,11 +9,12 @@ export const mcpAuthConfig = {
   adapter: PrismaAdapter(db),
   issuerUrl: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
   issuerPath: "/api/oauth",
-  serverOptions: {
-    accessTokenLifetime: 3600,
-    refreshTokenLifetime: 1209600,
-    allowBearerTokensInQueryString: true,
-  },
+  
+  // serverOptions: {
+  //   accessTokenLifetime: 3600,
+  //   refreshTokenLifetime: 1209600,
+  // },
+
   authenticateUser: async (request: any) => {
     const session = await nextAuth();
     return (session?.user as OAuthUser) ?? null;

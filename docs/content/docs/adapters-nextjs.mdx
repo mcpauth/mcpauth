@@ -57,14 +57,21 @@ export const { GET, POST, OPTIONS } = handlers;
 
 To serve the `.well-known` discovery endpoints required by OAuth, add a rewrite rule to your `next.config.mjs` (or `.js`).
 
+> **Note for certain clients (e.g. MCP Inspector):** Some clients may not automatically follow the `WWW-Authenticate` header to redirect for authentication to a non-root path. To ensure a smooth login flow, you must add a rewrite to the well-known endpoint.
+
 ```javascript
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
     return [
       {
-        source: '/.well-known/:slug*',
-        destination: '/api/oauth/.well-known/:slug*',
+        source: "/.well-known/:slug*",
+        destination: "/api/oauth/.well-known/:slug*",
+      },
+      // Add this rewrite for clients that don't auto-redirect
+      {
+        source: "/authorize",
+        destination: "/api/oauth/authorize",
       },
     ];
   },

@@ -120,7 +120,6 @@ export const mcpAuthConfig = {
   serverOptions: {
     accessTokenLifetime: 3600, // 1 hour
     refreshTokenLifetime: 1209600, // 14 days
-    allowBearerTokensInQueryString: true,
   },
 
   authenticateUser: async (request: Request) => {
@@ -183,7 +182,6 @@ export const { handlers, auth } = McpAuth({
   serverOptions: {
     accessTokenLifetime: 3600,
     refreshTokenLifetime: 1209600,
-    allowBearerTokensInQueryString: true,
   },
 
   authenticateUser: async (request: NextRequest) => {

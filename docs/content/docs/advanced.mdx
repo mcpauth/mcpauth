@@ -19,7 +19,6 @@ signInUrl: (req, callbackUrl) => `/signin?callbackUrl=${encodeURIComponent(callb
 serverOptions: {
   accessTokenLifetime: 3600,        // 1 h
   refreshTokenLifetime: 14 * 24 * 3600, // 14 days
-  allowBearerTokensInQueryString: true,
 }
 ```
 

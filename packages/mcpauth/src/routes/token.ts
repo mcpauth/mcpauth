@@ -232,9 +232,9 @@ async function handleRefreshTokenGrant(
 
   const accessToken = crypto.randomBytes(40).toString("hex");
   const newRefreshToken = crypto.randomBytes(40).toString("hex");
-  const accessTokenLifetime = config.serverOptions?.accessTokenLifetime || 3600;
+  const accessTokenLifetime = config.serverOptions?.accessTokenLifetime || 3600; // 1hr
   const refreshTokenLifetime =
-    config.serverOptions?.refreshTokenLifetime || 86400 * 14;
+    config.serverOptions?.refreshTokenLifetime || 86400 * 14; // 14 days
   const accessTokenExpiresAt = new Date(
     Date.now() + accessTokenLifetime * 1000
   );

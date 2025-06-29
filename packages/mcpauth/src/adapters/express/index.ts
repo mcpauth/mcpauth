@@ -12,7 +12,7 @@ import { createOAuthHandler } from "./handler";
 import { createResourceAuthenticator as createAuth } from "./auth";
 
 export function McpAuth(
-  config: FrameworkConfig
+  config: FrameworkConfig<ExpressRequest, ExpressResponse>
 ): (req: ExpressRequest, res: ExpressResponse, next: NextFunction) => void {
   return createOAuthHandler(config);
 }

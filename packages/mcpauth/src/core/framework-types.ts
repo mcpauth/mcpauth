@@ -52,14 +52,14 @@ export interface ServerOptions {
 export interface FrameworkConfig<Req = any, Res = any> {
   adapter: Adapter;
   authenticateUser: (
-    request: HttpRequest
+    request: Req
   ) => Promise<import("./types").OAuthUser | null>;
-  signInUrl: (request: HttpRequest, callbackUrl: string) => string;
+  signInUrl: (request: Req, callbackUrl: string) => string;
   issuerUrl: string;
   issuerPath: string;
   renderConsentPage?: (
-    request: HttpRequest,
+    request: Req,
     context: OAuthAuthorizationRequestInfo
-  ) => Promise<HttpResponse>;
+  ) => Promise<Req>;
   serverOptions?: ServerOptions;
 }

@@ -17,7 +17,6 @@ export const mcpAuthConfig = {
   serverOptions: {
     accessTokenLifetime: 3600,
     refreshTokenLifetime: 1209600,
-    allowBearerTokensInQueryString: true,
   },
 
   authenticateUser: async (request: Request) => {
