@@ -19,6 +19,30 @@ import { mcpAuth } from "./config/mcpAuth.config.js";
 import * as pug from "pug";
 import { mcpRouter } from "./routes/mcp.js";
 
+import fs from "node:fs";
+
+
+const topDir = path.join(import.meta.dirname, "..", "..");
+if (fs.existsSync(topDir)) {
+  console.log({ topDirContents: fs.readdirSync(topDir) });
+} else {
+  console.log(`Directory not found: ${topDir}`);
+}
+
+const viewsDir = path.join(import.meta.dirname, "..");
+if (fs.existsSync(viewsDir)) {
+  console.log({ viewsDirContents: fs.readdirSync(viewsDir) });
+} else {
+  console.log(`Directory not found: ${viewsDir}`);
+}
+
+const currDir = path.join(import.meta.dirname);
+if (fs.existsSync(currDir)) {
+  console.log({ currDirContents: fs.readdirSync(currDir) });
+} else {
+  console.log(`Directory not found: ${currDir}`);
+}
+
 export const app = express()
 
 app.set("port", process.env.PORT || 3000)
