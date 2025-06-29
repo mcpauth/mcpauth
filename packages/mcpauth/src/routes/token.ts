@@ -32,12 +32,14 @@ async function handleAuthorizationCodeGrant(
 ): Promise<any> {
   const { code, redirect_uri, client_id, client_secret, code_verifier } = body;
 
-  if (!code || !redirect_uri || !client_id) {
+  const requiredParams = ["code", "redirect_uri", "client_id"];
+  const missingParams = requiredParams.filter((param) => !body[param]);
+
+  if (missingParams.length > 0) {
     throw {
       status: 400,
       error: "invalid_request",
-      error_description:
-        "Missing required parameters for authorization_code grant.",
+      error_description: `Missing required parameters: ${missingParams.join(", ")}.`,
     };
   }
 
@@ -45,7 +47,7 @@ async function handleAuthorizationCodeGrant(
     throw {
       status: 401,
       error: "invalid_client",
-      error_description: "Client authentication failed.",
+      error_description: "Client authentication failed: missing client_secret.",
     };
   }
 
