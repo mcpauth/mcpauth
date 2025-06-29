@@ -11,14 +11,6 @@ import { mcpAuthConfig } from "../config/mcpAuth.config.js";
 
 export const mcpRouter = express.Router();
 
-mcpRouter.use((req, res, next) => {
-  console.log("MCP Request", req.method, req.url);
-  console.log("Headers", req.headers);
-  console.log("Body", req.body);
-  console.log("Params", req.params, req.query);
-  next();
-})
-
 // Map to store transports by session ID
 const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
 

@@ -67,6 +67,20 @@ app.use(express.static(path.join(import.meta.dirname, "..", "public")))
 app.use(express.urlencoded({ extended: true }))
 app.use(express.json())
 
+// Global request logger
+app.use((req, res, next) => {
+  console.log(`
+[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log('Headers:', req.headers);
+  if (Object.keys(req.body).length > 0) {
+    console.log('Body:', req.body);
+  }
+  if (Object.keys(req.query).length > 0) {
+    console.log('Query:', req.query);
+  }
+  next();
+});
+
 // Set session in res.locals
 app.use(currentSession)
 
