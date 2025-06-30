@@ -10,6 +10,7 @@ import {
   AuthorizationCode,
   Adapter,
   OAuthToken,
+  TokenEndpointAuthMethod,
 } from "../../core/types";
 
 export function PrismaAdapter(prisma: PrismaClient): Adapter {
@@ -21,27 +22,25 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       const clientRecord = await prisma.oAuthClient.findUnique({
         where: { clientId },
       });
+      if (!clientRecord) return null;
 
-      if (!clientRecord) {
-        return null;
-      }
-
-      // Verify the client secret if one is provided
-      if (clientSecret) {
-        if (!clientRecord.clientSecret) {
-          // This client does not have a secret, so it cannot be authenticated with one.
-          return null;
-        }
-        const isSecretValid = await bcrypt.compare(
+      // Confidential client → secret MUST verify
+      if (clientRecord.tokenEndpointAuthMethod !== "none") {
+        if (!clientSecret) return null;
+        if (!clientRecord.clientSecret) return null;
+        const ok = await bcrypt.compare(
           clientSecret,
           clientRecord.clientSecret
         );
-        if (!isSecretValid) {
-          return null;
-        }
+        if (!ok) return null;
       }
 
-      return { ...clientRecord, scope: clientRecord.scope || undefined };
+      return {
+        ...clientRecord,
+        tokenEndpointAuthMethod:
+          clientRecord.tokenEndpointAuthMethod as TokenEndpointAuthMethod,
+        scope: clientRecord.scope || undefined,
+      };
     },
 
     async saveToken(
@@ -92,7 +91,14 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         refreshTokenExpiresAt: tokenRecord.refreshTokenExpiresAt ?? undefined,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
         authorizationDetails: tokenRecord.authorizationDetails as any,
-        client: { ...client, scope: client.scope ?? undefined },
+        client: {
+          ...client,
+          tokenEndpointAuthMethod: client.tokenEndpointAuthMethod as
+            | "client_secret_basic"
+            | "client_secret_post"
+            | "none",
+          scope: client.scope ?? undefined,
+        },
         user: user,
       };
     },
@@ -103,11 +109,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         include: { client: true },
       });
 
-      if (
-        !tokenRecord ||
-        !tokenRecord.refreshToken ||
-        !tokenRecord.client
-      ) {
+      if (!tokenRecord || !tokenRecord.refreshToken || !tokenRecord.client) {
         return null;
       }
 
@@ -120,7 +122,14 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         refreshTokenExpiresAt: tokenRecord.refreshTokenExpiresAt ?? undefined,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
         authorizationDetails: tokenRecord.authorizationDetails as any,
-        client: { ...client, scope: client.scope ?? undefined },
+        client: {
+          ...client,
+          scope: client.scope ?? undefined,
+          tokenEndpointAuthMethod: client.tokenEndpointAuthMethod as
+            | "client_secret_basic"
+            | "client_secret_post"
+            | "none",
+        },
         user: user,
       };
     },
@@ -159,6 +168,8 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       const resultClient: OAuthClient = {
         ...createdCode.client,
         scope: createdCode.client.scope ?? undefined,
+        tokenEndpointAuthMethod: createdCode.client
+          .tokenEndpointAuthMethod as TokenEndpointAuthMethod,
       };
 
       return {
@@ -189,6 +200,8 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       const client: OAuthClient = {
         ...codeRecord.client,
         scope: codeRecord.client.scope ?? undefined,
+        tokenEndpointAuthMethod: codeRecord.client
+          .tokenEndpointAuthMethod as TokenEndpointAuthMethod,
       };
 
       const user: OAuthUser = { id: codeRecord.userId };
@@ -231,7 +244,10 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       actingUser?: OAuthUser | null
     ): Promise<ClientRegistrationResponseData> {
       const clientId = crypto.randomBytes(16).toString("hex");
-      const clientSecret = crypto.randomBytes(32).toString("hex");
+      const wantsPublic = params.token_endpoint_auth_method === "none";
+      const clientSecret = wantsPublic
+        ? null
+        : crypto.randomBytes(32).toString("hex");
       const issuedAt = Math.floor(Date.now() / 1000);
       const grantTypes = params.grant_types || [
         "authorization_code",
@@ -239,36 +255,43 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       ];
       const redirectUris = params.redirect_uris || [];
       const responseTypes = params.response_types || ["code"];
-      const tokenEndpointAuthMethod =
-        params.token_endpoint_auth_method || "client_secret_basic";
+      const tokenEndpointAuthMethod = wantsPublic
+        ? "none"
+        : params.token_endpoint_auth_method || "client_secret_basic";
 
-      const salt = await bcrypt.genSalt(10);
-      const hashedSecret = await bcrypt.hash(clientSecret, salt);
+      const hashedSecret = clientSecret
+        ? await bcrypt.hash(clientSecret, await bcrypt.genSalt(10))
+        : null;
 
       const newClient = await prisma.oAuthClient.create({
         data: {
           clientId,
           clientSecret: hashedSecret,
+          tokenEndpointAuthMethod,
           name: params.client_name?.trim() || "",
           redirectUris: redirectUris,
           grantTypes: grantTypes,
           scope: params.scope || "openid profile email",
+          userId: actingUser?.id,
         },
       });
 
       return {
         client_id: newClient.clientId,
-        client_secret: clientSecret,
-        client_secret_expires_at: 0, // 0 means never expires
+        ...(clientSecret
+          ? { client_secret: clientSecret, client_secret_expires_at: 0 }
+          : {}),
         client_id_issued_at: issuedAt,
         client_name: newClient.name || undefined,
         redirect_uris: newClient.redirectUris,
         grant_types: newClient.grantTypes,
         response_types: responseTypes,
         scope: newClient.scope || undefined,
-        token_endpoint_auth_method: tokenEndpointAuthMethod,
+        token_endpoint_auth_method: newClient.tokenEndpointAuthMethod as
+          | "client_secret_basic"
+          | "client_secret_post"
+          | "none",
       };
     },
-
   };
 }

@@ -3,10 +3,13 @@ export interface OAuthUser {
   [key: string]: any;
 }
 
+export type TokenEndpointAuthMethod = "client_secret_basic" | "client_secret_post" | "none";
+
 export interface OAuthClient {
   id: string;
   clientId: string;
-  clientSecret?: string;
+  clientSecret?: string | null;
+  tokenEndpointAuthMethod: TokenEndpointAuthMethod;
   name?: string;
   redirectUris: string[];
   grantTypes: string[];
@@ -87,7 +90,7 @@ export interface ClientRegistrationRequestParams {
 export interface ClientRegistrationResponseData {
   client_id: string;
   client_secret?: string;
-  client_secret_expires_at: number;
+  client_secret_expires_at?: number; // 0 means never expires
   client_id_issued_at: number;
   client_name?: string;
   redirect_uris: string[];

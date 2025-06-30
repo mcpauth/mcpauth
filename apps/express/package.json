@@ -18,8 +18,8 @@
     "dev": "tsx watch --env-file=.env src/server.ts & npm run watch:css",
     "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/*.ts --fix",
     "prettier": "prettier src/*.ts --write",
-    "db:push": "drizzle-kit push",
-    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push --config ./src/drizzle.config.ts",
+    "db:generate": "drizzle-kit generate --config ./src/drizzle.config.ts",
     "inspector": "npx @modelcontextprotocol/inspector@0.15.0"
   },
   "dependencies": {

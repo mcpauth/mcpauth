@@ -39,25 +39,38 @@ async function handleAuthorizationCodeGrant(
     throw {
       status: 400,
       error: "invalid_request",
-      error_description: `Missing required parameters: ${missingParams.join(", ")}.`,
+      error_description: `Missing required parameters: ${missingParams.join(
+        ", "
+      )}.`,
     };
   }
 
-  // if (!client_secret) {
-  //   throw {
-  //     status: 401,
-  //     error: "invalid_client",
-  //     error_description: "Client authentication failed: missing client_secret.",
-  //   };
-  // }
+  const client = await config.adapter.getClient(
+    client_id,
+    client_secret || null
+  );
 
-  const client = await config.adapter.getClient(client_id, client_secret);
-  if (!client) {
+  if (!client)
     throw {
       status: 401,
       error: "invalid_client",
       error_description: "Client authentication failed.",
     };
+
+  if (client.tokenEndpointAuthMethod === "none") {
+    if (client_secret)
+      throw {
+        status: 400,
+        error: "invalid_request",
+        error_description: "Public client must not send client_secret.",
+      };
+  } else {
+    if (!client_secret)
+      throw {
+        status: 401,
+        error: "invalid_client",
+        error_description: "Missing client_secret.",
+      };
   }
 
   const authCode = await config.adapter.getAuthorizationCode(code);
@@ -153,7 +166,10 @@ async function handleAuthorizationCodeGrant(
     token_type: "Bearer",
     expires_in: accessTokenLifetime,
     refresh_token: savedToken.refreshToken,
-    scope: typeof savedToken.scope === "string" ? savedToken.scope : savedToken.scope?.join(" "),
+    scope:
+      typeof savedToken.scope === "string"
+        ? savedToken.scope
+        : savedToken.scope?.join(" "),
   };
 }
 
@@ -171,7 +187,11 @@ async function handleRefreshTokenGrant(
     };
   }
 
-  if (!client_secret) {
+  const client = await config.adapter.getClient(
+    client_id,
+    client_secret || null
+  );
+  if (!client) {
     throw {
       status: 401,
       error: "invalid_client",
@@ -179,12 +199,19 @@ async function handleRefreshTokenGrant(
     };
   }
 
-  const client = await config.adapter.getClient(client_id, client_secret);
-  if (!client) {
+  if (client.tokenEndpointAuthMethod === "none" && client_secret) {
+    throw {
+      status: 400,
+      error: "invalid_request",
+      error_description: "Public client must not send client_secret.",
+    };
+  }
+
+  if (client.tokenEndpointAuthMethod !== "none" && !client_secret) {
     throw {
       status: 401,
       error: "invalid_client",
-      error_description: "Client authentication failed.",
+      error_description: "Missing client_secret.",
     };
   }
 
@@ -218,10 +245,7 @@ async function handleRefreshTokenGrant(
     ? existingToken.scope
     : [existingToken.scope];
 
-  if (
-    scope &&
-    !newScope.every((s: string) => originalScope.includes(s))
-  ) {
+  if (scope && !newScope.every((s: string) => originalScope.includes(s))) {
     throw {
       status: 400,
       error: "invalid_scope",
@@ -275,6 +299,16 @@ export async function handleToken(
   config: FrameworkConfig
 ): Promise<HttpResponse> {
   const body = request.body || {};
+
+  /* ---------- extract Basic credentials if present ---------- */
+  const basic = request.headers?.authorization?.match(/^Basic (.+)$/i);
+  if (basic) {
+    const [id, secret = ""] = Buffer.from(basic[1], "base64")
+      .toString()
+      .split(":");
+    body.client_id = body.client_id || id;
+    body.client_secret = body.client_secret || secret;
+  }
   const grantType = body.grant_type;
 
   try {

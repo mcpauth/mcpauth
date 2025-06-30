@@ -23,7 +23,7 @@ export async function expressRequestToHttpRequest(
 
   const contentType = req.headers['content-type'];
   if (contentType?.includes("application/x-www-form-urlencoded") || contentType?.includes("multipart/form-data")) {
-      body = new ExpressFormDataAdapter(req.body);
+    body = new ExpressFormDataAdapter(req.body);
   }
 
   const headers: Record<string, string> = {};

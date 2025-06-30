@@ -266,14 +266,7 @@ export async function handleGetAuthorize(
         },
       };
     }
-
-    const incomingUrl = new URL(request.url);
-    // TODO123
-    const formActionUrl = new URL(
-      incomingUrl.pathname + incomingUrl.search,
-      config.issuerUrl
-    ).toString();
-    console.log("formActionUrl", formActionUrl);
+    const formActionUrl = request.url;
 
     const oauthReqInfo = {
       response_type: responseType,

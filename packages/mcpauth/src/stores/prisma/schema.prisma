@@ -8,15 +8,16 @@ generator client {
 }
 
 model OAuthClient {
-  id           String   @id @default(cuid())
-  clientId     String   @unique
-  clientSecret String
-  name         String
-  description  String?
-  logoUri      String?
-  redirectUris String[]
-  grantTypes   String[]
-  scope        String?
+  id                      String   @id @default(cuid())
+  clientId                String   @unique
+  clientSecret            String? // null for public clients
+  tokenEndpointAuthMethod String   @default("client_secret_basic")
+  name                    String
+  description             String?
+  logoUri                 String?
+  redirectUris            String[]
+  grantTypes              String[]
+  scope                   String?
 
   userId String?
 
@@ -28,13 +29,13 @@ model OAuthClient {
 }
 
 model OAuthAuthorizationCode {
-  authorizationCode   String   @id
-  expiresAt           DateTime
-  redirectUri         String
-  scope               String?
+  authorizationCode    String   @id
+  expiresAt            DateTime
+  redirectUri          String
+  scope                String?
   authorizationDetails Json?
-  codeChallenge       String?
-  codeChallengeMethod String?
+  codeChallenge        String?
+  codeChallengeMethod  String?
 
   clientId String
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
