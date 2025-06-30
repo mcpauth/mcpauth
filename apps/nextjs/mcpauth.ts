@@ -8,8 +8,6 @@ import type { OAuthUser } from "@mcpauth/auth";
 export const mcpAuthConfig = {
   adapter: PrismaAdapter(db),
 
-  
-
   issuerUrl: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000",
   issuerPath: "/api/oauth",
 
