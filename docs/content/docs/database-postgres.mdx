@@ -1,0 +1,65 @@
+---
+title: Postgres
+---
+
+import { Callout } from 'nextra/components'
+
+# Postgres
+
+The Postgres store uses `kysely` to provide a type-safe database interface for your MCPAuth instance. It is designed to work with a standard Postgres database and is a great choice for production environments.
+
+## Installation
+
+To get started, install the required packages:
+
+```bash
+npm install @mcpauth/auth pg
+```
+
+## Setup
+
+Configure your MCPAuth instance to use the Postgres store. You will need to provide a `Kysely` instance connected to your database.
+
+```typescript filename="auth.ts"
+import { McpAuth } from "@mcpauth/auth";
+import { createPostgresStore } from "@mcpauth/auth/stores/postgres";
+import { Kysely, PostgresDialect } from 'kysely';
+import { Pool } from 'pg';
+
+const store = createPostgresStore(new Kysely<any>({
+  dialect: new PostgresDialect({
+    pool: new Pool({
+      connectionString: process.env.DATABASE_URL,
+    }),
+  }),
+}));
+
+export const { handlers, auth } = McpAuth({
+  store,
+  // ... other options
+});
+```
+
+<Callout type="info">
+  Your `DATABASE_URL` should be a standard Postgres connection string, e.g., `postgresql://user:pass@host:port/db`.
+</Callout>
+
+## Migrations
+
+MCPAuth provides a CLI tool to manage your database schema. To run migrations for the Postgres store, add the following script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "db:migrate": "mcpauth-migrate --run"
+  }
+}
+```
+
+Then, run the command to apply the migrations:
+
+```bash
+npm run db:migrate
+```
+
+This command will create the necessary tables (`oauth_client`, `oauth_token`, etc.) in your database.

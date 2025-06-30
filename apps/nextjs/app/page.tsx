@@ -11,7 +11,7 @@ export default async function Index() {
 
   if (session?.user?.id) {
     try {
-      const tokens = await db.oAuthToken.findMany({
+      const tokens = await db.oauthToken.findMany({
         where: {
           userId: session.user.id,
         },

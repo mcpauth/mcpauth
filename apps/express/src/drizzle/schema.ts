@@ -7,7 +7,7 @@ import {
   jsonb,
 } from "drizzle-orm/pg-core";
 
-export const oAuthClient = pgTable("oauth_client", {
+export const oauthClient = pgTable("oauth_client", {
   id: varchar("id", { length: 255 }).primaryKey(),
   clientId: varchar("client_id", { length: 255 }).unique().notNull(),
   clientSecret: varchar("client_secret", { length: 255 }),
@@ -23,7 +23,7 @@ export const oAuthClient = pgTable("oauth_client", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
+export const oauthAuthorizationCode = pgTable("oauth_authorization_code", {
   authorizationCode: varchar("authorization_code", { length: 255 }).primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),
   redirectUri: text("redirect_uri").notNull(),
@@ -33,12 +33,12 @@ export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
   codeChallengeMethod: text("code_challenge_method"),
   clientId: varchar("client_id", { length: 255 })
     .notNull()
-    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+    .references(() => oauthClient.id, { onDelete: "cascade" }),
   userId: varchar("user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const oAuthToken = pgTable("oauth_token", {
+export const oauthToken = pgTable("oauth_token", {
   accessToken: varchar("access_token", { length: 255 }).primaryKey(),
   accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
   refreshToken: varchar("refresh_token", { length: 255 }).unique(),
@@ -47,29 +47,29 @@ export const oAuthToken = pgTable("oauth_token", {
   authorizationDetails: jsonb("authorization_details"),
   clientId: varchar("client_id", { length: 255 })
     .notNull()
-    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+    .references(() => oauthClient.id, { onDelete: "cascade" }),
   userId: varchar("user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const oAuthClientRelations = relations(oAuthClient, ({ many }) => ({
-  authorizationCodes: many(oAuthAuthorizationCode),
-  tokens: many(oAuthToken),
+export const oauthClientRelations = relations(oauthClient, ({ many }) => ({
+  authorizationCodes: many(oauthAuthorizationCode),
+  tokens: many(oauthToken),
 }));
 
-export const oAuthAuthorizationCodeRelations = relations(
-  oAuthAuthorizationCode,
+export const oauthAuthorizationCodeRelations = relations(
+  oauthAuthorizationCode,
   ({ one }) => ({
-    client: one(oAuthClient, {
-      fields: [oAuthAuthorizationCode.clientId],
-      references: [oAuthClient.id],
+    client: one(oauthClient, {
+      fields: [oauthAuthorizationCode.clientId],
+      references: [oauthClient.id],
     }),
   }),
 );
 
-export const oAuthTokenRelations = relations(oAuthToken, ({ one }) => ({
-  client: one(oAuthClient, {
-    fields: [oAuthToken.clientId],
-    references: [oAuthClient.id],
+export const oauthTokenRelations = relations(oauthToken, ({ one }) => ({
+  client: one(oauthClient, {
+    fields: [oauthToken.clientId],
+    references: [oauthClient.id],
   }),
 }));

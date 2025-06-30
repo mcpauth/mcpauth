@@ -19,7 +19,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       clientId: string,
       clientSecret?: string | null
     ): Promise<OAuthClient | null> {
-      const clientRecord = await prisma.oAuthClient.findUnique({
+      const clientRecord = await prisma.oauthClient.findUnique({
         where: { clientId },
       });
       if (!clientRecord) return null;
@@ -48,7 +48,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       client: OAuthClient,
       user: OAuthUser
     ): Promise<OAuthToken> {
-      const createdToken = await prisma.oAuthToken.create({
+      const createdToken = await prisma.oauthToken.create({
         data: {
           accessToken: token.accessToken,
           accessTokenExpiresAt: token.accessTokenExpiresAt,
@@ -71,7 +71,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
     },
 
     async getAccessToken(accessToken: string): Promise<OAuthToken | null> {
-      const tokenRecord = await prisma.oAuthToken.findUnique({
+      const tokenRecord = await prisma.oauthToken.findUnique({
         where: { accessToken },
         include: { client: true },
       });
@@ -104,7 +104,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
     },
 
     async getRefreshToken(refreshToken: string): Promise<OAuthToken | null> {
-      const tokenRecord = await prisma.oAuthToken.findUnique({
+      const tokenRecord = await prisma.oauthToken.findUnique({
         where: { refreshToken },
         include: { client: true },
       });
@@ -148,7 +148,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
       client: OAuthClient,
       user: OAuthUser
     ): Promise<AuthorizationCode> {
-      const createdCode = await prisma.oAuthAuthorizationCode.create({
+      const createdCode = await prisma.oauthAuthorizationCode.create({
         data: {
           authorizationCode: code.authorizationCode,
           expiresAt: code.expiresAt,
@@ -188,7 +188,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
     async getAuthorizationCode(
       authorizationCode: string
     ): Promise<AuthorizationCode | null> {
-      const codeRecord = await prisma.oAuthAuthorizationCode.findUnique({
+      const codeRecord = await prisma.oauthAuthorizationCode.findUnique({
         where: { authorizationCode },
         include: { client: true },
       });
@@ -221,7 +221,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
 
     async revokeAuthorizationCode(code: AuthorizationCode): Promise<boolean> {
       try {
-        await prisma.oAuthAuthorizationCode.delete({
+        await prisma.oauthAuthorizationCode.delete({
           where: { authorizationCode: code.authorizationCode },
         });
         return true;
@@ -231,7 +231,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
     },
 
     async revokeToken(token: string): Promise<boolean> {
-      const result = await prisma.oAuthToken.deleteMany({
+      const result = await prisma.oauthToken.deleteMany({
         where: {
           OR: [{ accessToken: token }, { refreshToken: token }],
         },
@@ -263,7 +263,7 @@ export function PrismaAdapter(prisma: PrismaClient): Adapter {
         ? await bcrypt.hash(clientSecret, await bcrypt.genSalt(10))
         : null;
 
-      const newClient = await prisma.oAuthClient.create({
+      const newClient = await prisma.oauthClient.create({
         data: {
           clientId,
           clientSecret: hashedSecret,

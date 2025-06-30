@@ -32,63 +32,98 @@ export const { auth, GET, POST } = mcpAuth({
 });
 ```
 
-## 3. Schema
+<Callout type="info">
+  The Prisma store currently only supports Postgres.
+</Callout>
 
-Add the following models to your `schema.prisma` file when using the `PrismaAdapter`.
+## Schema Generation
+
+MCPAuth provides a CLI tool to generate the required Prisma schema for you. First, add the following script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "db:generate": "mcpauth-generate prisma prisma/schema.prisma"
+  }
+}
+```
+
+Then, run the command to generate the schema file:
+
+```bash
+npm run db:generate
+```
+
+This will create a `prisma/schema.prisma` file with all the necessary models and relations for the Prisma store.
+
+## Migrations
+
+Once the schema is generated, you can use the Prisma CLI to push the schema to your database.
+
+```bash
+npx prisma db push
+```
 
 ```prisma
 model OAuthClient {
-  id           String   @id @default(cuid())
-  clientId     String   @unique
-  clientSecret String
-  name         String
-  description  String?
-  logoUri      String?
-  redirectUris String[]
-  grantTypes   String[]
-  scope        String?
-
-  userId String?
+  id                      String   @id @default(cuid())
+  clientId                String   @unique @map("client_id")
+  clientSecret            String?  @map("client_secret")
+  tokenEndpointAuthMethod String   @map("token_endpoint_auth_method")
+  name                    String
+  description             String?
+  logoUri                 String?
+  redirectUris            String[] @map("redirect_uris")
+  grantTypes              String[] @map("grant_types")
+  scope                   String?
+  userId                  String?  @map("user_id")
 
   authorizationCodes OAuthAuthorizationCode[]
   tokens             OAuthToken[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("oauth_client")
 }
 
 model OAuthAuthorizationCode {
-  authorizationCode   String   @id
-  expiresAt           DateTime
-  redirectUri         String
-  scope               String?
-  authorizationDetails Json?
-  codeChallenge       String?
-  codeChallengeMethod String?
+  authorizationCode    String   @id @map("authorization_code")
+  expiresAt            DateTime @map("expires_at")
+  redirectUri          String   @map("redirect_uri")
+  scope                String?
+  authorizationDetails Json?    @map("authorization_details")
+  codeChallenge        String?  @map("code_challenge")
+  codeChallengeMethod  String?  @map("code_challenge_method")
 
+  clientId String      @map("client_id")
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId String
 
-  userId String
+  userId String @map("user_id")
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("oauth_authorization_code")
 }
 
 model OAuthToken {
-  accessToken           String    @id
-  accessTokenExpiresAt  DateTime
-  refreshToken          String?   @unique
-  refreshTokenExpiresAt DateTime?
+  accessToken           String    @id @map("access_token")
+  accessTokenExpiresAt  DateTime  @map("access_token_expires_at")
+  refreshToken          String?   @unique @map("refresh_token")
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at")
   scope                 String?
-  authorizationDetails  Json?
+  authorizationDetails  Json?     @map("authorization_details")
 
+  clientId String      @map("client_id")
   client   OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  clientId String
 
-  userId String
+  userId String @map("user_id")
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("oauth_token")
 }
+
 ```
 
 > **Note:** The schema provided is for PostgreSQL. While other database providers may be compatible, they are not officially tested or supported at this time.

@@ -1,4 +1,4 @@
-import { applyCorsToResponse, CORS_HEADERS, getSafeAllowedOrigin } from "../lib/cors";
+import { applyCorsToResponse } from "../lib/cors";
 import type {
   FrameworkConfig,
   HttpRequest,
@@ -13,7 +13,7 @@ export async function handleAuthorizationServerMetadata(
   basePath: string
 ): Promise<HttpResponse> {
   const issuer = config.issuerUrl;
-  const endpointBasePath = basePath; // e.g., /api/oauth
+  const endpointBasePath = basePath;
 
   const configuration = {
     issuer: issuer,

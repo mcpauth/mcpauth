@@ -26,8 +26,8 @@ export function DrizzleAdapter(
       clientId: string,
       clientSecret?: string | null
     ): Promise<OAuthClient | null> {
-      const clientRecord = await db.query.oAuthClient.findFirst({
-        where: eq(schema.oAuthClient.clientId, clientId),
+      const clientRecord = await db.query.oauthClient.findFirst({
+        where: eq(schema.oauthClient.clientId, clientId),
       });
 
       if (!clientRecord) {
@@ -56,7 +56,7 @@ export function DrizzleAdapter(
       user: OAuthUser
     ): Promise<OAuthToken> {
       const [createdToken] = await db
-        .insert(schema.oAuthToken)
+        .insert(schema.oauthToken)
         .values({
           accessToken: token.accessToken,
           accessTokenExpiresAt: token.accessTokenExpiresAt,
@@ -85,8 +85,8 @@ export function DrizzleAdapter(
     },
 
     async getAccessToken(accessToken: string): Promise<OAuthToken | null> {
-      const tokenRecord = await db.query.oAuthToken.findFirst({
-        where: eq(schema.oAuthToken.accessToken, accessToken),
+      const tokenRecord = await db.query.oauthToken.findFirst({
+        where: eq(schema.oauthToken.accessToken, accessToken),
         with: { client: true },
       });
 
@@ -114,8 +114,8 @@ export function DrizzleAdapter(
     },
 
     async getRefreshToken(refreshToken: string): Promise<OAuthToken | null> {
-      const tokenRecord = await db.query.oAuthToken.findFirst({
-        where: eq(schema.oAuthToken.refreshToken, refreshToken),
+      const tokenRecord = await db.query.oauthToken.findFirst({
+        where: eq(schema.oauthToken.refreshToken, refreshToken),
         with: { client: true },
       });
 
@@ -158,7 +158,7 @@ export function DrizzleAdapter(
       user: OAuthUser
     ): Promise<AuthorizationCode> {
       const [createdCode] = await db
-        .insert(schema.oAuthAuthorizationCode)
+        .insert(schema.oauthAuthorizationCode)
         .values({
           authorizationCode: code.authorizationCode,
           expiresAt: code.expiresAt,
@@ -187,9 +187,9 @@ export function DrizzleAdapter(
     async getAuthorizationCode(
       authorizationCode: string
     ): Promise<AuthorizationCode | null> {
-      const codeRecord = await db.query.oAuthAuthorizationCode.findFirst({
+      const codeRecord = await db.query.oauthAuthorizationCode.findFirst({
         where: eq(
-          schema.oAuthAuthorizationCode.authorizationCode,
+          schema.oauthAuthorizationCode.authorizationCode,
           authorizationCode
         ),
         with: { client: true },
@@ -222,10 +222,10 @@ export function DrizzleAdapter(
 
     async revokeAuthorizationCode(code: AuthorizationCode): Promise<boolean> {
       const result = await db
-        .delete(schema.oAuthAuthorizationCode)
+        .delete(schema.oauthAuthorizationCode)
         .where(
           eq(
-            schema.oAuthAuthorizationCode.authorizationCode,
+            schema.oauthAuthorizationCode.authorizationCode,
             code.authorizationCode
           )
         );
@@ -257,7 +257,7 @@ export function DrizzleAdapter(
         : null;
 
       const [newClient] = await db
-        .insert(schema.oAuthClient)
+        .insert(schema.oauthClient)
         .values({
           id: uuid(),
           clientId,
@@ -289,16 +289,16 @@ export function DrizzleAdapter(
 
     async revokeToken(token: string): Promise<boolean> {
       const accessTokenResult = await db
-        .delete(schema.oAuthToken)
-        .where(eq(schema.oAuthToken.accessToken, token));
+        .delete(schema.oauthToken)
+        .where(eq(schema.oauthToken.accessToken, token));
 
       if ((accessTokenResult.rowCount ?? 0) > 0) {
         return true;
       }
 
       const refreshTokenResult = await db
-        .delete(schema.oAuthToken)
-        .where(eq(schema.oAuthToken.refreshToken, token));
+        .delete(schema.oauthToken)
+        .where(eq(schema.oauthToken.refreshToken, token));
 
       return (refreshTokenResult.rowCount ?? 0) > 0;
     },

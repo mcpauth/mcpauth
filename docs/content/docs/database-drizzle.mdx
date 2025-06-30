@@ -30,15 +30,60 @@ export const { auth, GET, POST } = mcpAuth({
 });
 ```
 
-## 3. Schema
+<Callout type="info">
+  The Drizzle store currently only supports Postgres.
+</Callout>
 
-Below is the **complete** Postgres schema required by the `DrizzleAdapter`. You can copy-paste this into your `schema.ts` (or equivalent) and run `drizzle-kit push` or your preferred migration tool.
+## Schema Generation
+
+MCPAuth provides a CLI tool to generate the required Drizzle schema for you. First, add the following script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "db:generate": "mcpauth-generate drizzle ./db/schema.ts"
+  }
+}
+```
+
+Then, run the command to generate the schema file:
+
+```bash
+npm run db:generate
+```
+
+This will create a `db/schema.ts` file with all the necessary tables for the Drizzle store.
+
+## Migrations
+
+Once the schema is generated, you can use `drizzle-kit` to push the schema to your database.
+
+First, create a `drizzle.config.ts` file:
+
+```ts filename="drizzle.config.ts"
+import type { Config } from 'drizzle-kit';
+
+export default {
+	schema: './db/schema.ts',
+	out: './drizzle',
+	driver: 'pg',
+	dbCredentials: {
+		connectionString: process.env.DATABASE_URL!,
+	},
+} satisfies Config;
+```
+
+Finally, run the push command to apply the schema to your database:
+
+```bash
+npx drizzle-kit push:pg
+```
 
 ```typescript
 import { pgTable, varchar, text, timestamp, jsonb } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
-export const oAuthClient = pgTable("oauth_client", {
+export const oauthClient = pgTable("oauth_client", {
   id: varchar("id", { length: 255 }).primaryKey(),
   clientId: varchar("client_id", { length: 255 }).unique().notNull(),
   clientSecret: varchar("client_secret", { length: 255 }).notNull(),
@@ -53,7 +98,7 @@ export const oAuthClient = pgTable("oauth_client", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
+export const oauthAuthorizationCode = pgTable("oauth_authorization_code", {
   authorizationCode: varchar("authorization_code", { length: 255 }).primaryKey(),
   expiresAt: timestamp("expires_at").notNull(),
   redirectUri: text("redirect_uri").notNull(),
@@ -63,12 +108,12 @@ export const oAuthAuthorizationCode = pgTable("oauth_authorization_code", {
   codeChallengeMethod: text("code_challenge_method"),
   clientId: varchar("client_id", { length: 255 })
     .notNull()
-    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+    .references(() => oauthClient.id, { onDelete: "cascade" }),
   userId: varchar("user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
-export const oAuthToken = pgTable("oauth_token", {
+export const oauthToken = pgTable("oauth_token", {
   accessToken: varchar("access_token", { length: 255 }).primaryKey(),
   accessTokenExpiresAt: timestamp("access_token_expires_at").notNull(),
   refreshToken: varchar("refresh_token", { length: 255 }).unique(),
@@ -77,31 +122,31 @@ export const oAuthToken = pgTable("oauth_token", {
   authorizationDetails: jsonb("authorization_details"),
   clientId: varchar("client_id", { length: 255 })
     .notNull()
-    .references(() => oAuthClient.id, { onDelete: "cascade" }),
+    .references(() => oauthClient.id, { onDelete: "cascade" }),
   userId: varchar("user_id", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // Relations ---------------------------------------------------
-export const oAuthClientRelations = relations(oAuthClient, ({ many }) => ({
-  authorizationCodes: many(oAuthAuthorizationCode),
-  tokens: many(oAuthToken),
+export const oauthClientRelations = relations(oauthClient, ({ many }) => ({
+  authorizationCodes: many(oauthAuthorizationCode),
+  tokens: many(oauthToken),
 }));
 
-export const oAuthAuthorizationCodeRelations = relations(
-  oAuthAuthorizationCode,
+export const oauthAuthorizationCodeRelations = relations(
+  oauthAuthorizationCode,
   ({ one }) => ({
-    client: one(oAuthClient, {
-      fields: [oAuthAuthorizationCode.clientId],
-      references: [oAuthClient.id],
+    client: one(oauthClient, {
+      fields: [oauthAuthorizationCode.clientId],
+      references: [oauthClient.id],
     }),
   }),
 );
 
-export const oAuthTokenRelations = relations(oAuthToken, ({ one }) => ({
-  client: one(oAuthClient, {
-    fields: [oAuthToken.clientId],
-    references: [oAuthClient.id],
+export const oauthTokenRelations = relations(oauthToken, ({ one }) => ({
+  client: one(oauthClient, {
+    fields: [oauthToken.clientId],
+    references: [oauthClient.id],
   }),
 }));
 ```

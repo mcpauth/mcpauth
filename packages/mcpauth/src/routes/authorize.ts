@@ -1,8 +1,4 @@
-import type {
-  OAuthUser,
-  OAuthClient,
-  AuthorizationDetails,
-} from "../core/types";
+import type { AuthorizationDetails } from "../core/types";
 import type {
   HttpRequest,
   HttpResponse,
@@ -35,86 +31,115 @@ const DEFAULT_CONSENT_HTML = (
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Authorize Access</title>
     <style>
+      :root {
+        --background: hsl(0 0% 100%);
+        --foreground: hsl(240 10% 3.9%);
+        --card: hsl(0 0% 100%);
+        --card-foreground: hsl(240 10% 3.9%);
+        --primary: hsl(240 5.9% 10%);
+        --primary-foreground: hsl(0 0% 98%);
+        --secondary: hsl(240 4.8% 95.9%);
+        --secondary-foreground: hsl(240 5.9% 10%);
+        --border: hsl(240 5.9% 90%);
+        --radius: 0.5rem;
+      }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-        background-color: #f4f7f9;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        background-color: var(--background);
         margin: 0;
-        padding: 0;
+        padding: 2rem;
         display: flex;
         justify-content: center;
         align-items: center;
         min-height: 100vh;
-        color: #333;
+        color: var(--foreground);
       }
       .container {
-        background-color: #ffffff;
-        padding: 40px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        background-color: var(--card);
+        padding: 2rem;
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
         text-align: center;
-        max-width: 400px;
-        width: 90%;
+        max-width: 420px;
+        width: 100%;
       }
       h1 {
-        font-size: 24px;
-        color: #2c3e50;
-        margin-bottom: 10px;
+        font-size: 1.5rem; /* 24px */
+        font-weight: 600;
+        color: var(--card-foreground);
+        margin-bottom: 0.5rem; /* 8px */
       }
       p {
-        font-size: 16px;
-        line-height: 1.6;
-        color: #555;
-        margin-bottom: 20px;
+        font-size: 0.875rem; /* 14px */
+        line-height: 1.25rem; /* 20px */
+        color: hsl(240 3.8% 46.1%);
+        margin-bottom: 1.5rem; /* 24px */
       }
       .client-name {
-        font-weight: bold;
-        color: #2980b9;
+        font-weight: 600;
+        color: var(--card-foreground);
       }
       .scopes {
-        background-color: #ecf0f1;
-        padding: 10px;
-        border-radius: 4px;
-        font-size: 14px;
-        margin-bottom: 30px;
+        background-color: var(--secondary);
+        padding: 1rem;
+        border-radius: var(--radius);
+        font-size: 0.875rem; /* 14px */
+        margin-bottom: 1.5rem; /* 24px */
         text-align: left;
       }
       .scopes strong {
         display: block;
-        margin-bottom: 5px;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--card-foreground);
+      }
+      .scopes ul {
+        list-style-type: none;
+        padding: 0;
+        margin: 0;
+        color: hsl(240 3.8% 46.1%);
+      }
+      .scopes li {
+        margin-bottom: 0.25rem;
       }
       .form-actions {
-        display: flex;
-        justify-content: space-between;
-        gap: 15px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem; /* 12px */
       }
       button {
-        flex-grow: 1;
-        padding: 12px 20px;
-        font-size: 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        transition: background-color 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        border-radius: var(--radius);
+        font-size: 0.875rem;
         font-weight: 500;
+        padding: 0.625rem 1rem; /* 10px 16px */
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        border: 1px solid transparent;
       }
       .allow-button {
-        background-color: #27ae60;
-        color: white;
+        background-color: var(--primary);
+        color: var(--primary-foreground);
+        border-color: var(--primary);
       }
       .allow-button:hover {
-        background-color: #229954;
+        background-color: hsl(240 5.9% 10% / 0.9);
       }
       .deny-button {
-        background-color: #e74c3c;
-        color: white;
+        background-color: var(--background);
+        color: var(--secondary-foreground);
+        border-color: var(--border);
       }
       .deny-button:hover {
-        background-color: #c0392b;
+        background-color: var(--secondary);
       }
       .footer-text {
-        font-size: 12px;
-        color: #7f8c8d;
-        margin-top: 30px;
+        font-size: 0.75rem; /* 12px */
+        color: hsl(240 3.8% 46.1%);
+        margin-top: 1.5rem; /* 24px */
       }
     </style>
   </head>
@@ -136,7 +161,7 @@ const DEFAULT_CONSENT_HTML = (
         </ul>
       </div>
       `
-          : "<p>This application is requesting basic access to your account.</p>"
+          : ""
       }
 
       <form method="POST" action="${formActionUrl}">
@@ -162,7 +187,7 @@ const DEFAULT_CONSENT_HTML = (
           <button type="submit" name="allow" value="true" class="allow-button">Allow</button>
         </div>
       </form>
-      <p class="footer-text">You can revoke this permission at any time in your account settings.</p>
+      <p class="footer-text">This permission can be revoked later.</p>
     </div>
   </body>
   </html>

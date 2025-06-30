@@ -14,6 +14,8 @@
     "---Stores---",
     "database-drizzle",
     "database-prisma",
+    "database-postgres",
+    "database-mysql",
     "---Advanced---",
     "advanced"
   ]

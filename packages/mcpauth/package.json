@@ -6,10 +6,16 @@
   "license": "ISC",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "bin": {
+    "mcpauth-migrate": "./dist/cli/migrate.js",
+    "mcpauth-generate": "./dist/cli/generate.js"
+  },
   "scripts": {
-    "build": "rm -rf ./dist && npx tsc -b tsconfig.json --force && cp package.json dist/",
+    "build": "rm -rf ./dist && npx tsc -b tsconfig.json --force && cp package.json dist/ && chmod +x dist/cli/migrate.js && chmod +x dist/cli/generate.js",
     "dev": "npx tsc -w",
-    "publish": "npm publish --access public"
+    "db:generate": "npx tsx src/cli/generate.ts",
+    "publish": "npm publish --access public",
+    "db:migrate": "npx tsx src/cli/index.ts"
   },
   "dependencies": {
     "bcryptjs": "^3.0.2",
@@ -18,20 +24,27 @@
   "peerDependencies": {
     "@prisma/client": "^6.0.0",
     "drizzle-orm": "*",
+    "express": "*",
     "next": "^15.0.0",
     "pg": "*",
-    "uuid": "*",
-    "express": "*"
+    "uuid": "*"
   },
   "devDependencies": {
+    "kysely": "^0.28.2",
+    "@mrleebo/prisma-ast": "^0.5.0",
     "@prisma/client": "^6.0.0",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/cookie": "^0.6.0",
     "@types/node": "latest",
     "@types/pg": "^8.11.5",
     "@types/react": "latest",
     "@types/uuid": "^9.0.8",
+    "better-sqlite3": "^12.2.0",
+    "dotenv": "^17.0.0",
     "drizzle-orm": "^0.44.2",
-    "pg": "^8.11.5",
+    "mysql2": "^3.14.1",
+    "pg": "^8.16.3",
+    "ts-node": "^10.9.2",
     "typescript": "latest"
   },
   "prisma": {
