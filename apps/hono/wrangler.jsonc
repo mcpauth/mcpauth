@@ -1,0 +1,14 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "hono",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-30",
+  "compatibility_flags": ["nodejs_compat"],
+  "hyperdrive": [
+    {
+      "binding": "DB",
+      "id": "c80c8a2ed2aa41829f3169f6f84e437d",
+      "localConnectionString": "TODO"
+    }
+  ]
+}

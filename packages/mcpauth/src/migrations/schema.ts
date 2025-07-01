@@ -14,7 +14,6 @@ export const schema: McpAuthDbSchema = {
       redirect_uris: { type: "string[]", required: true },
       grant_types: { type: "string[]", required: true },
       scope: { type: "string" },
-      user_id: { type: "string" },
       created_at: { type: "date", required: true, defaultValue: "now()" },
       updated_at: { type: "date", required: true, updatedAt: true },
     },

@@ -74,6 +74,7 @@ async function handleAuthorizationCodeGrant(
   }
 
   const authCode = await config.adapter.getAuthorizationCode(code);
+  
   if (!authCode) {
     throw {
       status: 400,

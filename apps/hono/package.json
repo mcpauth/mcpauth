@@ -1,0 +1,25 @@
+{
+  "name": "@mcpauth/hono-example",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev src/index.ts",
+    "deploy": "wrangler deploy src/index.ts",
+    "test": "vitest --run"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.13.3",
+    "better-auth": "^1.2.12",
+    "fetch-to-node": "^2.1.0",
+    "hono": "^4.2.4",
+    "pg": "^8.11.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240405.0",
+    "@types/pg": "^8.11.6",
+    "vitest": "^1.5.0",
+    "wrangler": "^4.22.0"
+  }
+}

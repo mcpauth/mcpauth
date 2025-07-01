@@ -1,0 +1,12 @@
+# Used by Wrangler in local development
+# In production, these should be set as Cloudflare Worker Secrets.
+
+BETTER_AUTH_URL=
+BETTER_AUTH_SECRET=
+DATABASE_URL=
+OAUTH_ALLOWED_ORIGIN=
+
+
+INTERNAL_STATE_SECRET=
+
+OAUTH_PRIVATE_KEY=

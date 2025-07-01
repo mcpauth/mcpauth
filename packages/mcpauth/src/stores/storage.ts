@@ -8,6 +8,8 @@ import type {
   OAuthUser,
   TokenEndpointAuthMethod,
 } from "../core/types";
+import { randomUUID as uuid } from "node:crypto";
+
 import type { GenericAdapter } from "./adapter";
 import * as crypto from "crypto";
 import * as bcrypt from "bcryptjs";
@@ -44,7 +46,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       client: OAuthClient,
       user: OAuthUser
     ): Promise<OAuthToken> {
-      await adapter.create({
+      const createdToken = await adapter.create({
         model: "oauthToken",
         data: {
           accessToken: token.accessToken,
@@ -57,21 +59,26 @@ export function createStorage(adapter: GenericAdapter): Adapter {
           userId: user.id,
         },
       });
-      return { ...token, client, user };
+      return { ...createdToken, client, user };
     },
 
     async getAccessToken(accessToken: string): Promise<OAuthToken | null> {
       const tokenRecord = await adapter.findOne({
         model: "oauthToken",
         where: [{ field: "accessToken", value: accessToken }],
-        include: { client: true },
       });
 
-      if (!tokenRecord || !tokenRecord.client) return null;
+      if (!tokenRecord) return null;
 
-      const { client, ...restOfToken } = tokenRecord;
+      const client = await adapter.findOne({
+        model: "oauthClient",
+        where: [{ field: "id", value: tokenRecord.clientId }],
+      });
+
+      if (!client) return null;
+
       return {
-        ...restOfToken,
+        ...tokenRecord,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
         client: {
           ...client,
@@ -87,16 +94,21 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       const tokenRecord = await adapter.findOne({
         model: "oauthToken",
         where: [{ field: "refreshToken", value: refreshToken }],
-        include: { client: true },
       });
 
-      if (!tokenRecord || !tokenRecord.refreshToken || !tokenRecord.client) {
+      if (!tokenRecord || !tokenRecord.refreshToken) {
         return null;
       }
 
-      const { client, ...restOfToken } = tokenRecord;
+      const client = await adapter.findOne({
+        model: "oauthClient",
+        where: [{ field: "id", value: tokenRecord.clientId }],
+      });
+
+      if (!client) return null;
+
       return {
-        ...restOfToken,
+        ...tokenRecord,
         scope: tokenRecord.scope ? tokenRecord.scope.split(" ") : [],
         client: {
           ...client,
@@ -139,7 +151,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
         },
       });
 
-      return { ...code, client, user };
+      return { ...createdCode, client, user };
     },
 
     async getAuthorizationCode(
@@ -148,14 +160,19 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       const codeRecord = await adapter.findOne({
         model: "oauthAuthorizationCode",
         where: [{ field: "authorizationCode", value: authorizationCode }],
-        include: { client: true },
       });
 
-      if (!codeRecord || !codeRecord.client) return null;
+      if (!codeRecord) return null;
 
-      const { client, ...restOfCode } = codeRecord;
+      const client = await adapter.findOne({
+        model: "oauthClient",
+        where: [{ field: "id", value: codeRecord.clientId }],
+      });
+
+      if (!client) return null;
+
       return {
-        ...restOfCode,
+        ...codeRecord,
         scope: codeRecord.scope ? codeRecord.scope.split(" ") : [],
         client: {
           ...client,
@@ -201,6 +218,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       const newClient = await adapter.create({
         model: "oauthClient",
         data: {
+          id: uuid(),
           clientId,
           clientSecret: hashedSecret,
           tokenEndpointAuthMethod:
@@ -214,7 +232,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
 
       return {
         client_id: newClient.clientId,
-        ...(clientSecret && { client_secret: clientSecret }),
+        ...(clientSecret && { client_secret: newClient.clientSecret ?? undefined }),
         client_id_issued_at: Math.floor(Date.now() / 1000),
         client_name: newClient.name || undefined,
         redirect_uris: newClient.redirectUris,

@@ -42,7 +42,7 @@ export async function verifyScope(
 /**
  * Checks if a scope string contains valid scope values.
  */
-export function isValidScopeString(scope: string, allowedScopes: string[] = ['openid', 'profile', 'email', 'read', 'write']): boolean {
+export function isValidScopeString(scope: string, allowedScopes: string[] = ['openid', 'profile', 'email', 'read', 'write', 'offline_access']): boolean {
   if (!scope || scope.trim().length === 0) return false;
   
   const scopes = scope.split(' ').filter(s => s.length > 0);

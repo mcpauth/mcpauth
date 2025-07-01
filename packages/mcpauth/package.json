@@ -66,6 +66,11 @@
       "types": "./dist/adapters/express/index.d.ts",
       "default": "./dist/adapters/express/index.js"
     },
+    "./adapters/hono": {
+      "development": "./src/adapters/hono/index.ts",
+      "types": "./dist/adapters/hono/index.d.ts",
+      "default": "./dist/adapters/hono/index.js"
+    },
     "./stores/prisma": {
       "development": "./src/stores/prisma/index.ts",
       "types": "./dist/stores/prisma/index.d.ts",
@@ -75,6 +80,16 @@
       "development": "./src/stores/dizzle/index.ts",
       "types": "./dist/stores/drizzle/index.d.ts",
       "default": "./dist/stores/drizzle/index.js"
+    },
+    "./stores/postgres": {
+      "development": "./src/stores/postgres/index.ts",
+      "types": "./dist/stores/postgres/index.d.ts",
+      "default": "./dist/stores/postgres/index.js"
+    },
+    "./stores/mysql": {
+      "development": "./src/stores/mysql/index.ts",
+      "types": "./dist/stores/mysql/index.d.ts",
+      "default": "./dist/stores/mysql/index.js"
     },
     "./core": {
       "development": "./src/core/index.ts",

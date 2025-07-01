@@ -21,7 +21,7 @@ export async function handleAuthorizationServerMetadata(
     token_endpoint: `${issuer}${endpointBasePath}/token`,
     revocation_endpoint: `${issuer}${endpointBasePath}/revoke`,
     registration_endpoint: `${issuer}${endpointBasePath}/register`,
-    jwks_uri: `${issuer}${endpointBasePath}/.well-known/jwks.json`,
+    jwks_uri: `${issuer}/.well-known/jwks.json`,
     response_types_supported: ["code"],
     response_modes_supported: ["query"],
     grant_types_supported: [
