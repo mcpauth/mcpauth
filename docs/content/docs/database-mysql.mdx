@@ -16,24 +16,16 @@ npm install @mcpauth/auth mysql2
 
 ## Setup
 
-Configure your MCPAuth instance to use the MySQL store. You will need to provide a `Kysely` instance connected to your database.
+Configure your MCPAuth instance to use the MySQL store.
 
-```typescript filename="auth.ts"
+```typescript filename="mcpauth.ts"
 import { McpAuth } from "@mcpauth/auth";
-import { createMysqlStore } from "@mcpauth/auth/stores/mysql";
-import { Kysely, MysqlDialect } from 'kysely';
-import { createPool } from 'mysql2';
-
-const store = createMysqlStore(new Kysely<any>({
-  dialect: new MysqlDialect({
-    pool: createPool({
-      uri: process.env.DATABASE_URL,
-    }),
-  }),
-}));
+import { MySQLAdapter } from "@mcpauth/auth/stores/mysql";
 
 export const { handlers, auth } = McpAuth({
-  store,
+  MySQLAdapter({
+    connectionString: process.env.DATABASE_URL,
+  }),
   // ... other options
 });
 ```
@@ -49,7 +41,7 @@ MCPAuth provides a CLI tool to manage your database schema. To run migrations fo
 ```json filename="package.json"
 {
   "scripts": {
-    "db:migrate": "mcpauth-migrate --run"
+    "mcpauth:migrate": "mcpauth-migrate --run"
   }
 }
 ```
@@ -57,7 +49,33 @@ MCPAuth provides a CLI tool to manage your database schema. To run migrations fo
 Then, run the command to apply the migrations:
 
 ```bash
-npm run db:migrate
+npm run mcpauth:migrate
 ```
 
 This command will create the necessary tables (`oauth_client`, `oauth_token`, etc.) in your database.
+
+## Schema
+
+To generate a SQL schema for your database, you can use `mcpauth-generate`.
+
+Add a `mcpauth:generate` script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "mcpauth:generate": "mcpauth-generate sql ./schema.sql"
+  }
+}
+```
+
+<Callout type="info">
+  We recommend creating a `.env` file in your project root with your `DATABASE_URL` to make it accessible to the generate tool.
+</Callout>
+
+Run the script to generate your schema file:
+
+```bash
+npm run mcpauth:generate
+```
+
+You can now use the generated SQL schema to create your database tables.

@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev src/index.ts",
+    "mcpauth:generate": "npx mcpauth-generate",
     "deploy": "wrangler deploy src/index.ts",
     "test": "vitest --run"
   },
@@ -17,7 +18,6 @@
     "pg": "^8.11.5"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20240405.0",
     "@types/pg": "^8.11.6",
     "vitest": "^1.5.0",
     "wrangler": "^4.22.0"

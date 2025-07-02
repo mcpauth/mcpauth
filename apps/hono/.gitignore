@@ -1,1 +1,18 @@
+# Dependencies
+/node_modules
+
+# Local development
 .dev.vars
+.wrangler/
+
+# Build artifacts
+dist/
+
+# IDE config
+.vscode/
+
+# OS files
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

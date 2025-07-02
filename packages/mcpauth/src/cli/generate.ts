@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-import { getDbTypeFromUrl } from './migrate';
+import { getDbTypeFromUrl } from '../lib/db';
 import { schema } from '../migrations/schema';
 import { generateDrizzleSchema } from "../generators/drizzle";
 import { generatePrismaSchema } from "../generators/prisma";
+import { generateSqlSchema } from "../generators/sql";
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import 'dotenv/config';
@@ -45,8 +46,13 @@ async function main() {
         } else {
             console.log("✅ Schema is already up to date.");
         }
+    } else if (generatorType === "sql") {
+        const { code, fileName } = await generateSqlSchema({ schema, dbType, outputFile });
+        const fullPath = path.join(process.cwd(), fileName);
+        await writeFile(fullPath, code);
+        console.log(`✅ Schema successfully generated at ${fullPath}`);
     } else {
-        console.error(`Generator "${generatorType}" is not supported. Only "drizzle" and "prisma" are currently available.`);
+        console.error(`Generator "${generatorType}" is not supported. Only "drizzle", "prisma", and "sql" are currently available.`);
         process.exit(1);
     }
 }

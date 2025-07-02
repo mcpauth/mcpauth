@@ -6,16 +6,13 @@ import {
   CreateTableBuilder,
   AlterTableColumnAlteringBuilder,
 } from "kysely";
-import { Pool } from "pg";
-import { createPool } from "mysql2";
 import { schema } from "./schema";
 import { FieldAttribute, FieldType } from "./types";
-import * as fs from "fs";
 
 // This is a simplified representation for the generator's purpose
 export type DbType = "postgres" | "mysql" | "sqlite";
 
-const typeMap = {
+export const typeMap = {
   postgres: {
     string: "text",
     number: "integer",
@@ -46,7 +43,7 @@ const typeMap = {
   },
 } as const;
 
-function getColumnType(field: FieldAttribute, fieldName: string, dbType: DbType) {
+export function getColumnType(field: FieldAttribute, fieldName: string, dbType: DbType) {
   if (fieldName === "id") {
     return typeMap[dbType].id;
   }

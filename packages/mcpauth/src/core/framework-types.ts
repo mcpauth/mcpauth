@@ -60,6 +60,6 @@ export interface FrameworkConfig<Req = any, Res = any> {
   renderConsentPage?: (
     request: Req,
     context: OAuthAuthorizationRequestInfo
-  ) => Promise<Req>;
+  ) => Promise<string> | string;
   serverOptions?: ServerOptions;
 }

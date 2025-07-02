@@ -90,11 +90,11 @@ export async function handleJwks(
   request: HttpRequest,
   config: FrameworkConfig
 ): Promise<HttpResponse> {
-  const privateKeyPem = process.env.OAUTH_PRIVATE_KEY;
+  const privateKeyPem = process.env.MCPAUTH_PRIVATE_KEY;
 
   if (!privateKeyPem) {
     console.error(
-      "[handleJwks] OAUTH_PRIVATE_KEY environment variable is not set. Cannot generate JWKS."
+      "[handleJwks] MCPAUTH_PRIVATE_KEY environment variable is not set. Cannot generate JWKS."
     );
     return {
       status: 500,

@@ -11,11 +11,9 @@ description: Environment variables and provider options for @mcpauth/auth
 
 | Variable | Required | Description |
 | --- | :---: | --- |
-| `OAUTH_ALLOWED_ORIGIN` | ✅ | Comma-separated list of origins allowed to use your OAuth server. |
-| `BASE_URL` / `NEXT_PUBLIC_BASE_URL` | ✅ | The fully-qualified base URL of your app. |
-| `INTERNAL_STATE_SECRET` | ✅ | Secret for signing the `state` param during OAuth flow. |
-| `OAUTH_PRIVATE_KEY` | ✅ | Private key for signing JWTs. Must be **PEM** formatted. |
-| `ISSUER_PATH` |  | Path prefix for the OAuth endpoints (default: `/api/oauth`). |
+| `MCPAUTH_ALLOWED_ORIGIN` | ✅ | Comma-separated list of origins allowed to use your OAuth server. |
+| `MCPAUTH_SECRET` | ✅ | Secret for signing the `state` param during OAuth flow. |
+| `MCPAUTH_PRIVATE_KEY` | ✅ | Private key for signing JWTs. Must be **PEM** formatted. |
 
 ## Provider Options
 

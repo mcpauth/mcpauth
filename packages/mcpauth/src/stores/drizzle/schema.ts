@@ -18,7 +18,6 @@ export const oauthClient = pgTable("oauth_client", {
   grantTypes: text("grant_types").array().notNull(),
   tokenEndpointAuthMethod: text("token_endpoint_auth_method").notNull(),
   scope: text("scope"),
-  userId: varchar("user_id", { length: 255 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

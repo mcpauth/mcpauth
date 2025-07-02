@@ -16,24 +16,16 @@ npm install @mcpauth/auth pg
 
 ## Setup
 
-Configure your MCPAuth instance to use the Postgres store. You will need to provide a `Kysely` instance connected to your database.
+Configure your MCPAuth instance to use the Postgres store.
 
-```typescript filename="auth.ts"
+```typescript filename="mcpauth.ts"
 import { McpAuth } from "@mcpauth/auth";
-import { createPostgresStore } from "@mcpauth/auth/stores/postgres";
-import { Kysely, PostgresDialect } from 'kysely';
-import { Pool } from 'pg';
-
-const store = createPostgresStore(new Kysely<any>({
-  dialect: new PostgresDialect({
-    pool: new Pool({
-      connectionString: process.env.DATABASE_URL,
-    }),
-  }),
-}));
+import { PostgresAdapter } from "@mcpauth/auth/stores/postgres";
 
 export const { handlers, auth } = McpAuth({
-  store,
+  PostgresAdapter({
+    connectionString: process.env.DATABASE_URL,
+  }),
   // ... other options
 });
 ```
@@ -49,7 +41,7 @@ MCPAuth provides a CLI tool to manage your database schema. To run migrations fo
 ```json filename="package.json"
 {
   "scripts": {
-    "db:migrate": "mcpauth-migrate --run"
+    "mcpauth:migrate": "mcpauth-migrate --run"
   }
 }
 ```
@@ -57,7 +49,32 @@ MCPAuth provides a CLI tool to manage your database schema. To run migrations fo
 Then, run the command to apply the migrations:
 
 ```bash
-npm run db:migrate
+npm run mcpauth:migrate
 ```
 
 This command will create the necessary tables (`oauth_client`, `oauth_token`, etc.) in your database.
+
+## Schema
+
+To generate a SQL schema for your database, you can use `mcpauth-generate`.
+
+Then, add a `mcpauth:generate` script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "mcpauth:generate": "mcpauth-generate sql ./schema.sql"
+  }
+}
+```
+
+
+We recommend creating a `.env` file in your project root with your `DATABASE_URL` to make it accessible to the codegen tool.
+
+Run the script to generate your schema types:
+
+```bash
+npm run mcpauth:generate
+```
+
+You can now use the generated SQL schema to create your database tables.

@@ -1,1 +1,1 @@
-export * from "./mysql";
+export { MysqlAdapter } from "./mysql";

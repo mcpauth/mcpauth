@@ -1,15 +1,15 @@
 import { createHmac, timingSafeEqual } from "crypto";
 
 /** 32+ random bytes, base64url. Load from env or secret manager. */
-const SECRET = process.env.INTERNAL_STATE_SECRET!;
+const SECRET = process.env.MCPAUTH_SECRET!;
 if (!SECRET) {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error("INTERNAL_STATE_SECRET must be set in production for security.");
+    throw new Error("MCPAUTH_SECRET must be set in production for security.");
   }
   // To prevent a hard crash in development when the secret is not yet set,
   // we'll log a prominent warning. The flow will be insecure.
   console.warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-  console.warn("!!! WARNING: INTERNAL_STATE_SECRET is not set.               !!!");
+  console.warn("!!! WARNING: MCPAUTH_SECRET is not set.               !!!");
   console.warn("!!! The OAuth flow is INSECURE and vulnerable to tampering.  !!!");
   console.warn("!!! This is NOT safe for production.                       !!!");
   console.warn("!!! Generate a secret with:                                !!!");

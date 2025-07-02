@@ -1,1 +1,1 @@
-export * from "./postgres";
+export { PostgresAdapter } from "./postgres";

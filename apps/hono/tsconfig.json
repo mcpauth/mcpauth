@@ -10,10 +10,9 @@
       "DOM"
     ],
     "types": [
-      "vitest/globals",
-      "@cloudflare/workers-types"
+      "vitest/globals"
     ],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx"
-  },
+  }
 }

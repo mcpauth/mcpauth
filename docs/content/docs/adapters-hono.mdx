@@ -1,0 +1,100 @@
+---
+title: Hono Adapter
+description: Use @mcpauth/auth with Hono.
+---
+
+# Hono Adapter
+
+The Hono adapter allows you to use `@mcpauth/auth` in any Hono application, including serverless environments like Cloudflare Workers.
+
+## 1. Install dependencies
+
+Install `@mcpauth/auth` and `hono`:
+
+```bash
+npm install @mcpauth/auth@0.1.0 hono
+```
+
+## 2. Initialize the provider
+
+Create a file at `src/mcpauth.ts` to configure the provider.
+
+```ts
+// src/mcpauth.ts
+import { McpAuth } from "@mcpauth/auth/adapters/hono";
+import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
+import { db } from "./db"; // Your Drizzle instance
+import { getUserFromSession } from "./auth"; // Your existing auth logic
+
+export const { handlers, auth } = McpAuth({
+  adapter: DrizzleAdapter(db), // Or PrismaAdapter(prisma)
+  issuerUrl: process.env.BASE_URL!,
+  authenticateUser: async (c) => {
+    const user = await getUserFromSession(c);
+    return user;
+  },
+  signInUrl: (c, callbackUrl) => {
+    return process.env.BASE_URL + "/login";
+  },
+});
+```
+
+## 3. Create the API routes
+
+In your main Hono file (e.g., `src/index.ts`), register the OAuth and `.well-known` routes.
+
+```ts
+// src/index.ts
+import { Hono } from "hono";
+import { handlers } from "./mcpauth";
+
+const app = new Hono();
+
+app.route("/api/oauth", handlers);
+app.route("/.well-known", handlers);
+
+export default app;
+```
+
+## 4. Protect your MCP routes
+
+Use the exported `auth` middleware to protect your MCP routes.
+
+```ts
+// src/index.ts (continued)
+import { Hono } from "hono";
+import { handlers, auth } from "./mcpauth";
+import { createMcpHandler } from "@vercel/mcp-adapter";
+
+const app = new Hono();
+
+// ... OAuth routes from above
+
+const mcpRouter = new Hono();
+
+mcpRouter.all("*", (c) => {
+  // 1. Authenticate the request
+  const session = await mcpauth(c.env).auth(c);
+  if (!session) {
+    return c.text('Unauthorized', 401);
+  }
+
+  const mcpHandler = createMcpHandler({
+    // ... your MCP configuration
+  });
+
+  return mcpHandler(c.req.raw, c.env, c.executionCtx);
+});
+
+app.route("/api/mcp", mcpRouter);
+
+export default app;
+```
+
+## 5. Initialize your database store
+
+See instructions in Database Stores.
+
+---
+
+Next: [Database Stores ➡️](/docs/database-stores)

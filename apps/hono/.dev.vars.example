@@ -1,12 +1,14 @@
 # Used by Wrangler in local development
 # In production, these should be set as Cloudflare Worker Secrets.
 
-BETTER_AUTH_URL=
+BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=
-DATABASE_URL=
-OAUTH_ALLOWED_ORIGIN=
+
+MCPAUTH_ALLOWED_ORIGIN=http://localhost:8787,http://localhost:6274
+
+MCPAUTH_SECRET=
+
+MCPAUTH_PRIVATE_KEY=
+BASE_URL=http://localhost:8787
 
 
-INTERNAL_STATE_SECRET=
-
-OAUTH_PRIVATE_KEY=

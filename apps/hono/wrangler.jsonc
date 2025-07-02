@@ -3,12 +3,34 @@
   "name": "hono",
   "main": "src/index.ts",
   "compatibility_date": "2025-06-30",
-  "compatibility_flags": ["nodejs_compat"],
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
   "hyperdrive": [
     {
       "binding": "DB",
-      "id": "c80c8a2ed2aa41829f3169f6f84e437d",
-      "localConnectionString": "TODO"
+      "id": "2c79e872b47b4ab98217ec715b00f306"
     }
-  ]
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "MCP_SESSION",
+        "class_name": "McpSession"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_classes": [
+        "McpSession"
+      ]
+    }
+  ],
+  "observability": {
+    "logs": {
+      "enabled": true
+    }
+  }
 }

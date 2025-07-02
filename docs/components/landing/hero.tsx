@@ -10,12 +10,18 @@ import { Button } from "@/components/ui/button";
 import { Spotlight } from "./spotlight";
 import { Copy, Check } from "lucide-react";
 
-type Tab = { name: "Next.js" | "Express"; mcpCode: string; routeCode: string };
+type CodeFile = { name: string; content: string; language: string };
+
+type Tab = { name: "Next.js" | "Express" | "Hono"; files: CodeFile[] };
 
 const tabs: Tab[] = [
   {
     name: "Next.js",
-    mcpCode: `import { McpAuth } from "@mcpauth/auth/adapters/next";
+    files: [
+      {
+        name: "mcpauth.ts",
+        language: "typescript",
+        content: `import { McpAuth } from "@mcpauth/auth/adapters/next";
 import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
 
 export const { handlers, auth } = McpAuth({
@@ -28,7 +34,11 @@ export const { handlers, auth } = McpAuth({
     return session?.user ?? null;
   },
 });`,
-    routeCode: `import { NextRequest, NextResponse } from "next/server";
+      },
+      {
+        name: "route.ts",
+        language: "typescript",
+        content: `import { NextRequest, NextResponse } from "next/server";
 import { mcpAuth } from "@/lib/mcpAuth";
 import { createMcpHandler } from "@vercel/mcp-adapter";
 
@@ -49,10 +59,34 @@ const handler = async (req: NextRequest) => {
 
 export { handler as GET, handler as POST, handler as DELETE };
 `,
+      },
+      {
+        name: "next.config.js",
+        language: "javascript",
+        content: `import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  async rewrites() {
+    return [
+      {
+        source: '/.well-known/:slug*',
+        destination: '/api/oauth/.well-known/:slug*',
+      },
+    ];
+  },
+}
+
+export default nextConfig;`,
+      },
+    ],
   },
   {
     name: "Express",
-    mcpCode: `import { McpAuth } from "@mcpauth/auth/adapters/express";
+    files: [
+      {
+        name: "mcpauth.ts",
+        language: "typescript",
+        content: `import { McpAuth } from "@mcpauth/auth/adapters/express";
 import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
 
 export const mcpAuth = McpAuth({
@@ -65,7 +99,11 @@ export const mcpAuth = McpAuth({
     return session?.user ?? null;
   },
 });`,
-    routeCode: `import { Router } from "express";
+      },
+      {
+        name: "route.ts",
+        language: "typescript",
+        content: `import { Router } from "express";
 import { getMcpSession } from "@mcpauth/auth";
 import { mcpAuthConfig } from "@/lib/mcpAuth";
 import { createMcpHandler } from "@vercel/mcp-adapter";
@@ -84,6 +122,69 @@ mcpRouter.post("/", async (req, res) => {
     // define tools and capabilities here
   })(req, res);
 });`,
+      },
+    ],
+  },
+  {
+    name: "Hono",
+    files: [
+      {
+        name: "mcpauth.ts",
+        language: "typescript",
+        content: `import { McpAuth } from "@mcpauth/auth/adapters/hono";
+import { NextRequest } from "next/server";
+import { auth, auth as nextAuth } from "./auth";
+import type { OAuthUser } from "@mcpauth/auth";
+import { PostgresAdapter } from "@mcpauth/auth/stores/postgres";
+import { Context } from "hono";
+
+export const mcpauth = (env: CloudflareBindings) => {
+  return McpAuth({
+    adapter: PostgresAdapter(env.DB),
+
+    issuerUrl: process.env.BASE_URL || \"http://localhost:8787\",
+    issuerPath: \"/api/oauth\",
+
+    authenticateUser: async (c: Context) => {
+      const session = await auth(env).api.getSession({
+        // @ts-ignore TODO
+        headers: new Headers(c.headers),
+      });
+
+      return (session?.user as OAuthUser) ?? null;
+    },
+
+    signInUrl: (request: NextRequest, callbackUrl: string) => {
+      return process.env.BASE_URL! + \"?callbackUrl=\" + encodeURIComponent(callbackUrl);
+    },
+  });
+};`,
+      },
+      {
+        name: "index.ts",
+        language: "typescript",
+        content: `app.on([\"GET\", \"POST\", \"OPTIONS\"], \"/api/oauth/*\", (c, next) => {
+  return mcpauth(c.env).handler(c, next);
+});
+app.on([\"GET\", \"POST\", \"OPTIONS\"], \"/.well-known/*\", (c, next) => {
+  return mcpauth(c.env).handler(c, next);
+});`,
+      },
+      {
+        name: "mcp.ts",
+        language: "typescript",
+        content: `// Handle POST requests for client-to-server communication
+mcpRouter.post('/', async (c) => {
+  const session = await mcpauth(c.env).auth(c);
+
+  if (!session) {
+    return c.text('Unauthorized', 401);
+  }
+
+  // ... your MCP logic here
+});`,
+      },
+    ],
   },
 ];
 
@@ -103,6 +204,13 @@ export default function Hero() {
             A full-featured, self-hosted OAuth&nbsp;2.0 server built for the
             Model-Context-Protocol ecosystem.
           </p>
+          <div className="flex pt-4">
+            <Link href="/docs/installation">
+              <Button size="lg" className="text-base font-bold">
+                Get Started
+              </Button>
+            </Link>
+          </div>
           <div className="flex flex-wrap gap-3 items-center">
             {/* Install command bar */}
             <div className="relative mt-4 hidden md:flex items-center gap-2 w-10/12 border border-white/5">
@@ -193,10 +301,7 @@ export default function Hero() {
         </div>
 
         {/* Right – Code */}
-        <CodeWindow
-          mcpCode={tabs[tab].mcpCode}
-          routeCode={tabs[tab].routeCode}
-        />
+        <CodeWindow files={tabs[tab].files} />
       </div>
     </section>
   );

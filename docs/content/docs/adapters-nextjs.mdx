@@ -15,10 +15,10 @@ npm install @mcpauth/auth @vercel/mcp-adapter
 
 ## 2. Initialize the provider
 
-Create a file at `lib/oauth.ts` to configure the provider.
+Create a file at `lib/mcpauth.ts` to configure the provider.
 
 ```ts
-// lib/oauth.ts
+// lib/mcpauth.ts
 import { McpAuth } from "@mcpauth/auth/adapters/next";
 import { DrizzleAdapter } from "@mcpauth/auth/stores/drizzle";
 import { db } from "./db"; // Your Drizzle instance
@@ -28,17 +28,17 @@ import { NextRequest } from "next/server";
 
 export const { handlers, auth } = McpAuth({
   adapter: DrizzleAdapter(db), // Or PrismaAdapter(prisma)
+
   issuerUrl: process.env.NEXT_PUBLIC_BASE_URL!,
   issuerPath: "/api/oauth",
-
-  serverOptions: {
-    accessTokenLifetime: 3600, // 1 hour
-    refreshTokenLifetime: 1209600, // 14 days
-  },
 
   authenticateUser: async (request: NextRequest) => {
     const session = await nextAuth();
     return (session?.user as OAuthUser) ?? null;
+  },
+
+  signInUrl: (request: NextRequest, callbackUrl: string) => {
+    return "/api/auth/signin"; // Path to your NextAuth.js sign-in page
   },
 });
 ```
@@ -49,7 +49,7 @@ Create a catch-all API route at `app/api/oauth/[...route]/route.ts` to handle al
 
 ```ts
 // app/api/oauth/[...route]/route.ts
-import { handlers } from "@/lib/oauth";
+import { handlers } from "@/lib/mcpauth";
 export const { GET, POST, OPTIONS } = handlers;
 ```
 
@@ -57,7 +57,7 @@ export const { GET, POST, OPTIONS } = handlers;
 
 To serve the `.well-known` discovery endpoints required by OAuth, add a rewrite rule to your `next.config.mjs` (or `.js`).
 
-> **Note for certain clients (e.g. MCP Inspector):** Some clients may not automatically follow the `WWW-Authenticate` header to redirect for authentication to a non-root path. To ensure a smooth login flow, you must add a rewrite to the well-known endpoint.
+**Note: for certain clients (e.g. MCP Inspector):** Some clients may not automatically follow the `WWW-Authenticate` header to redirect for authentication to a non-root path. To ensure a smooth login flow, you must add a rewrite to the well-known endpoint.
 
 ```javascript
 /** @type {import('next').NextConfig} */
@@ -104,6 +104,10 @@ const handler = async (req: NextRequest) => {
 
 export { handler as GET, handler as POST };
 ```
+
+## 6. Initialize your database store
+
+See instructions in Database Stores.
 
 ---
 

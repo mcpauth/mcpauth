@@ -5,12 +5,148 @@ description: Custom sign-in pages, server options, and extending adapters
 
 # Advanced Topics
 
-## Custom Sign-In Page
+## Custom Consent Page
 
-Override OAuth’s default login experience by supplying `signInUrl`:
+You can provide a URL to a custom consent page. This page is where users will be redirected to approve or deny an authorization request from a client application.
+
+The `renderConsentPage` option can be a string containing the URL, or a function that returns the URL.
+
+### Using a static URL
+
+You can provide a static URL to your consent page.
 
 ```ts
-signInUrl: (req, callbackUrl) => `/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`
+// mcpauth.ts
+export const { handlers, auth } = McpAuth({
+  // ... other options
+  renderConsentPage: process.env.NEXT_PUBLIC_BASE_URL + '/oauth/consent',
+});
+```
+
+In this case, consent parameters will be passed as query parameters to the consent page.
+
+### Using a dynamic URL
+
+If you need to construct the URL dynamically, you can provide a function. The function receives the request object and an `OAuthAuthorizationRequestInfo` object containing details about the authorization request.
+
+The function signature is:
+```ts
+renderConsentPage: (
+  request: Req,
+  context: OAuthAuthorizationRequestInfo
+) => Promise<string>;
+```
+
+The `context` object contains information about the client and user that you can display on your consent page.
+
+### Implementing the Consent Page
+
+When a user is redirected to your consent page, MCPAuth will pass along the necessary authorization parameters in a single, base64-encoded `params` query parameter. Your page will need to decode and parse this parameter to process the consent.
+
+#### 1. Export `signIn` from your configuration
+
+You'll need to export the `signIn` function from your `mcpauth.ts` file so you can use it in your client-side component.
+
+```ts
+// mcpauth.ts
+export const { handlers, auth, signIn } = McpAuth({
+  // ... other options
+});
+```
+
+#### 2. Create your consent page component
+
+Here is an example of a client-side React component for a consent page. It reads the `params` from the URL, decodes them, and uses the `signIn` function to submit the user's choice.
+
+```tsx
+// app/oauth/consent/page.tsx
+'use client';
+
+import { useState, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { signIn } from '@/mcpauth'; // Adjust the import path as needed
+import { AuthorizationDetails } from '@mcpauth/auth';
+
+export default function ConsentPage() {
+  const searchParams = useSearchParams();
+
+  const decodedParams = useMemo(() => {
+    const params = searchParams.get('params');
+    if (!params) return null;
+    try {
+      return JSON.parse(Buffer.from(params, 'base64').toString('utf-8'));
+    } catch (e) {
+      console.error('Failed to parse params:', e);
+      return null;
+    }
+  }, [searchParams]);
+
+  // Example state for handling authorization details (e.g., scopes)
+  const [accessType, setAccessType] = useState('limited');
+  const [selected, setSelected] = useState<string[]>([]);
+  const [allSelected, setAllSelected] = useState(false);
+
+  const handleSubmit = async (allow: boolean) => {
+    if (!decodedParams) {
+      console.error("Missing required authorization parameters.");
+      return;
+    }
+
+    const {
+      userId,
+      clientId,
+      redirectUri,
+      responseType,
+      internalState,
+      state: clientStateValue,
+      codeChallenge,
+      codeChallengeMethod,
+    } = decodedParams;
+
+    let authorization_details: AuthorizationDetails[] = [];
+
+    if (allow) {
+      // Logic to determine authorization_details based on user selection
+      if (accessType === "all" || allSelected) {
+        authorization_details = [
+          { type: "substack_newsletter", identifier: "*" },
+        ];
+      } else if (selected.length > 0) {
+        authorization_details = selected.map((id) => ({
+          type: "substack_newsletter",
+          identifier: id,
+        }));
+      }
+    }
+
+    await signIn({
+      user_id: userId,
+      client_id: clientId,
+      redirect_uri: redirectUri,
+      response_type: responseType,
+      internal_state: internalState,
+      state: clientStateValue,
+      code_challenge: codeChallenge,
+      code_challenge_method: codeChallengeMethod,
+      authorization_details: authorization_details,
+      allow,
+    });
+  };
+
+  if (!decodedParams) {
+    return <div>Error: Invalid authorization request.</div>;
+  }
+
+  return (
+    <div>
+      <h1>Consent</h1>
+      <p>An application is requesting access to your account.</p>
+      {/* UI for selecting scopes/permissions would go here */}
+      <button onClick={() => handleSubmit(true)}>Allow</button>
+      <button onClick={() => handleSubmit(false)}>Deny</button>
+    </div>
+  );
+}
 ```
 
 ## Tuning Server Options
@@ -20,18 +156,6 @@ serverOptions: {
   accessTokenLifetime: 3600,        // 1 h
   refreshTokenLifetime: 14 * 24 * 3600, // 14 days
 }
-```
-
-## Adding a New Adapter
-
-Adapters are thin wrappers around the core provider. To add **Fastify** support for example:
-
-```ts
-import { McpAuthCore } from "@mcpauth/auth";
-export const FastifyAdapter = (fastifyInstance) => (options) => {
-  const provider = McpAuthCore(options);
-  // map fastify req/res to provider
-};
 ```
 
 PRs welcome!

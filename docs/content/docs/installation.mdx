@@ -9,8 +9,10 @@ This guide walks you through the **minimal** steps to spin-up `@mcpauth/auth` in
 
 ## 1. Install the package
 
+Since `@mcpauth/auth` is pre-1.0, we recommend installing a pinned version to avoid breaking changes on minor/patch version bumps.
+
 ```bash
-npm install @mcpauth/auth
+npm install @mcpauth/auth@0.1.0
 ```
 
 ## 2. Set environment variables
@@ -18,25 +20,30 @@ npm install @mcpauth/auth
 Create a `.env` (or `.env.local` for Next.js) and add the following variables:
 
 ```bash
-# Comma-separated list of allowed origins for the OAuth flow
-OAUTH_ALLOWED_ORIGIN="http://localhost:3000,http://localhost:6274"
-
-# Base URL of your application
-BASE_URL="http://localhost:3000" # Or NEXT_PUBLIC_BASE_URL for Next.js
+# Comma-separated list of CORS allowed origins for the OAuth flow
+MCPAUTH_ALLOWED_ORIGIN="http://localhost:3000,http://localhost:6274"
 
 # Secret used to sign the `state` parameter
-INTERNAL_STATE_SECRET=<openssl rand -hex 32>
+MCPAUTH_SECRET=<openssl rand -hex 32>
 
 # Private key used to sign JWTs – must begin with BEGIN PRIVATE KEY
-OAUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
+MCPAUTH_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----"
 ```
 
-> See the **Configuration** page for a full list of tunable options.
+See the [**Configuration**](/docs/configuration) page for a full list of tunable options.
+
+You can generate a new `MCPAUTH_PRIVATE_KEY` with the following `openssl` command:
+
+```bash
+openssl genpkey -algorithm RSA -out private_key.pem -pkeyopt rsa_keygen_bits:2048
+```
+
+Then, copy the contents of `private_key.pem` into the `MCPAUTH_PRIVATE_KEY` variable.
 
 ## 3. Choose an adapter & store
 
 * **Framework adapter** – e.g. `next`, `express` (see dedicated pages).
-* **Database store** – e.g. **Drizzle** or **Prisma** (see Database Stores).
+* **Database store** – e.g. `Drizzle`, `Prisma`, or `MySQL` (see Database Stores).
 
 ---
 

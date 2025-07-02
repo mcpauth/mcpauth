@@ -11,8 +11,8 @@
     "deploy": "vercel --prod",
     "postinstall": "prisma generate",
     "inspector": "npx @modelcontextprotocol/inspector@0.15.0",
-    "mcpauth:db:migrate": "mcpauth-migrate",
-    "mcpauth:db:generate": "mcpauth-generate"
+    "mcpauth:migrate": "mcpauth-migrate",
+    "mcpauth:generate": "mcpauth-generate"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.9.1",

@@ -16,17 +16,22 @@ function TrafficLightsIcon(props: React.ComponentPropsWithoutRef<"svg">) {
   );
 }
 
+interface CodeFile {
+  name: string;
+  content: string;
+  language: string;
+}
+
 interface CodeWindowProps {
-  mcpCode: string;
-  routeCode: string;
+  files: CodeFile[];
   className?: string;
 }
 
-export function CodeWindow({ mcpCode, routeCode, className }: CodeWindowProps) {
-  const tabs = [
-    { name: "mcpAuth.ts", content: mcpCode.trim(), language: "tsx" },
-    { name: "route.ts", content: routeCode.trim(), language: "tsx" },
-  ];
+export function CodeWindow({ files, className }: CodeWindowProps) {
+  const tabs = files.map((file) => ({
+    ...file,
+    content: file.content.trim(),
+  }));
 
   const [active, setActive] = useState(0);
   const [mounted, setMounted] = useState(false);

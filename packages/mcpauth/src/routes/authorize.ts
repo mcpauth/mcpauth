@@ -324,12 +324,23 @@ export async function handleGetAuthorize(
     };
 
     if (config.renderConsentPage) {
-      const result = await config.renderConsentPage(request, passedParams);
+      let result: string | undefined;
 
-      if (result.redirect) {
+      if (typeof config.renderConsentPage === "string") {
+        result = config.renderConsentPage;
+
+        const params = Buffer.from(JSON.stringify(passedParams)).toString(
+          "base64"
+        );
+        result = result + "?params=" + params;
+      } else {
+        result = await config.renderConsentPage(request, passedParams);
+      }
+
+      if (result) {
         return {
-          status: result.status,
-          redirect: result.redirect,
+          status: 302,
+          redirect: result,
         };
       }
     }

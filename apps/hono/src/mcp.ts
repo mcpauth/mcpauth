@@ -1,85 +1,56 @@
-import { Hono, Context } from "hono";
-import { randomUUID } from "node:crypto";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
-import { toFetchResponse, toReqRes } from "fetch-to-node";
-import { mcpauth } from "../mcpauth";
-import { createFetchTool } from "./lib/fetch.tool";
-import { createSearchTool } from "./lib/search.tool";
+import { Context, Hono } from 'hono';
+import { isInitializeRequest } from '@modelcontextprotocol/sdk/types.js';
+import { mcpauth } from '../mcpauth';
+
+// Define a type for the Hono context for clarity
+type HonoContext = Context<{ Bindings: CloudflareBindings }>;
 
 export const mcpRouter = new Hono<{ Bindings: CloudflareBindings }>();
 
-// Map to store transports by session ID for stateful interaction
-const transports: { [sessionId: string]: StreamableHTTPServerTransport } = {};
-
-// Handle POST requests for client-to-server communication
-mcpRouter.post('/', async (c) => {
-  const session = await mcpauth(c.env).auth(c);
-
-  if (!session) {
-    return c.text('Unauthorized', 401);
-  }
-
-  const sessionId = c.req.header('mcp-session-id');
-  const body = await c.req.json();
-  let transport: StreamableHTTPServerTransport;
-
-  if (sessionId && transports[sessionId]) {
-    transport = transports[sessionId];
-  } else if (!sessionId && isInitializeRequest(body)) {
-    transport = new StreamableHTTPServerTransport({
-      sessionIdGenerator: () => randomUUID(),
-      onsessioninitialized: (newSessionId) => {
-        transports[newSessionId] = transport;
-      }
-    });
-
-    transport.onclose = () => {
-      if (transport.sessionId) {
-        delete transports[transport.sessionId];
-      }
-    };
-
-    const server = new McpServer({
-      name: "hono-mcp-server",
-      version: "1.0.0"
-    });
-
-    createSearchTool(server);
-    createFetchTool(server);
-
-    await server.connect(transport);
-  } else {
-    return c.json({
-      jsonrpc: '2.0',
-      error: { code: -32000, message: 'Bad Request: No valid session ID provided' },
-      id: null,
-    }, 400);
-  }
-
-  const { req, res } = toReqRes(c.req.raw);
-  await transport.handleRequest(req, res, body);
-  return toFetchResponse(res);
-});
-
-// Reusable handler for GET (SSE) and DELETE (session termination)
-const handleSessionRequest = async (c: Context<{ Bindings: CloudflareBindings }>) => {
+// This is the main handler for all MCP requests.
+// It determines the correct Durable Object to forward the request to.
+const mcpHandler = async (c: HonoContext) => {
+  // 1. Authenticate the request
   const session = await mcpauth(c.env).auth(c);
   if (!session) {
     return c.text('Unauthorized', 401);
   }
 
-  const sessionId = c.req.header('mcp-session-id');
-  if (!sessionId || !transports[sessionId]) {
-    return c.text('Invalid or missing session ID', 404);
+  let sessionId = c.req.header('mcp-session-id');
+
+  // 2. Determine the session ID
+  // Only try to parse body for POST requests
+  if (c.req.method === 'POST') {
+    const body = await c.req.json().catch(() => ({}));
+    // If there's no session ID and it's an initialize request, create a new session.
+    if (!sessionId && isInitializeRequest(body)) {
+      const newId = c.env.MCP_SESSION.newUniqueId();
+      sessionId = newId.toString();
+    }
   }
-  
-  const transport = transports[sessionId];
-  const { req, res } = toReqRes(c.req.raw);
-  await transport.handleRequest(req, res);
-  return toFetchResponse(res);
+
+  // If we still don't have a session ID, it's a bad request.
+  if (!sessionId) {
+    return c.json(
+      {
+        jsonrpc: '2.0',
+        error: { code: -32000, message: 'Bad Request: No session ID provided' },
+        id: null,
+      },
+      400,
+    );
+  }
+
+  // 3. Get the Durable Object stub for the session ID.
+  const id = c.env.MCP_SESSION.idFromString(sessionId);
+  const stub = c.env.MCP_SESSION.get(id);
+
+  // 4. Forward the request to the Durable Object.
+  return stub.fetch(c.req.raw);
 };
 
-mcpRouter.get('/', handleSessionRequest);
-mcpRouter.delete('/', handleSessionRequest);
+// All MCP routes are handled by the same handler, which delegates to the Durable Object.
+mcpRouter.post('/', mcpHandler);
+mcpRouter.get('/', mcpHandler);
+mcpRouter.delete('/', mcpHandler);
+

@@ -9,7 +9,7 @@ export const mcpauth = (env: CloudflareBindings) => {
   return McpAuth({
     adapter: PostgresAdapter(env.DB),
 
-    issuerUrl: process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8787",
+    issuerUrl: process.env.BASE_URL || "http://localhost:8787",
     issuerPath: "/api/oauth",
 
     authenticateUser: async (c: Context) => {
@@ -22,7 +22,7 @@ export const mcpauth = (env: CloudflareBindings) => {
     },
 
     signInUrl: (request: NextRequest, callbackUrl: string) => {
-      return "/";
+      return process.env.BASE_URL! + "?callbackUrl=" + encodeURIComponent(callbackUrl);
     },
   });
 };

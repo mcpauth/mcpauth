@@ -1,14 +1,10 @@
 import { Hono } from "hono";
 import { auth } from "../auth";
-import { createAuthClient } from "better-auth/client";
 import { mcpauth } from "../mcpauth";
 import { mcpRouter } from "./mcp";
+export { McpSession } from "./mcp-session";
 
 const app = new Hono<{ Bindings: CloudflareBindings }>();
-
-const authClient = createAuthClient({
-  baseURL: "http://localhost:8787/api/auth",
-});
 
 // Serve the frontend
 app.get("/", async (c) => {

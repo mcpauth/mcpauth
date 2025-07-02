@@ -24,3 +24,6 @@ npx wrangler hyperdrive create my-db \
 binding = "DB"
 id      = "<hyperdrive-id>"
 ```
+
+Then copy .env.example to .env and fill in `WRANGLER_HYPERDRIVE_LOCAL_CONNECTION_STRING_DB` with your connection string to run locally.
+

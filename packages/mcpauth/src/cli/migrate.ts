@@ -6,27 +6,11 @@ import { createPool } from "mysql2";
 import Database from "better-sqlite3";
 import * as dotenv from "dotenv";
 import path from "path";
-import { getMigrations, DbType } from "../migrations/generator";
+import { getMigrations } from "../migrations/generator";
+import { getDbTypeFromUrl } from "../lib/db";
 
 // Load environment variables from .env file in the root
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });
-
-export function getDbTypeFromUrl(urlString: string): DbType | null {
-  if (
-    urlString.startsWith("postgres://") ||
-    urlString.startsWith("postgresql://")
-  ) {
-    return "postgres";
-  }
-  if (urlString.startsWith("mysql://")) {
-    return "mysql";
-  }
-  // Simple check for a file path, assuming it's SQLite if no protocol is found.
-  if (!urlString.includes("://")) {
-    return "sqlite";
-  }
-  return null;
-}
 
 async function main() {
   const args = process.argv.slice(2);

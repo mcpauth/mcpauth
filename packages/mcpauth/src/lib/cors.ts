@@ -3,15 +3,15 @@ import { HttpRequest, HttpResponse } from "src/core/framework-types";
 
 /**
  * Determines a safe `Access-Control-Allow-Origin` header value.
- * It checks the request's Origin against a comma-separated list in `OAUTH_ALLOWED_ORIGIN`.
+ * It checks the request's Origin against a comma-separated list in `MCPAUTH_ALLOWED_ORIGIN`.
  *
  * @param request The NextRequest object.
  * @returns The request's origin if it's in the allowlist. Returns '*' if the allowlist is a wildcard.
  *          Returns the first configured origin as a fallback if the request origin is not in the list.
- *          Returns undefined if `OAUTH_ALLOWED_ORIGIN` is not set.
+ *          Returns undefined if `MCPAUTH_ALLOWED_ORIGIN` is not set.
  */
 export function getSafeAllowedOrigin(originHeader: string | null): string | undefined {
-  const allowedOriginsEnv = process.env.OAUTH_ALLOWED_ORIGIN;
+  const allowedOriginsEnv = process.env.MCPAUTH_ALLOWED_ORIGIN;
 
   // If the environment variable is not set, no origin should be allowed.
   if (!allowedOriginsEnv) {
