@@ -42,29 +42,42 @@ export async function verifyScope(
 /**
  * Checks if a scope string contains valid scope values.
  */
-export function isValidScopeString(scope: string, allowedScopes: string[] = ['openid', 'profile', 'email', 'read', 'write', 'offline_access']): boolean {
+export function isValidScopeString(
+  scope: string,
+  allowedScopes: string[] = [
+    "openid",
+    "profile",
+    "email",
+    "read",
+    "write",
+    "offline_access",
+    "claudeai",
+  ]
+): boolean {
   if (!scope || scope.trim().length === 0) return false;
-  
-  const scopes = scope.split(' ').filter(s => s.length > 0);
-  return scopes.every(s => allowedScopes.includes(s));
+
+  const scopes = scope.split(" ").filter((s) => s.length > 0);
+  return scopes.every((s) => allowedScopes.includes(s));
 }
 
 /**
  * Normalizes scope arrays/strings to a consistent format.
  */
-export function normalizeScopes(scope: string | string[] | undefined): string[] {
+export function normalizeScopes(
+  scope: string | string[] | undefined
+): string[] {
   if (!scope) return [];
-  
+
   if (Array.isArray(scope)) {
-    return scope.filter(s => s && s.length > 0);
+    return scope.filter((s) => s && s.length > 0);
   }
-  
-  return scope.split(' ').filter(s => s.length > 0);
+
+  return scope.split(" ").filter((s) => s.length > 0);
 }
 
 /**
  * Converts scope array back to space-separated string.
  */
 export function scopesToString(scopes: string[]): string {
-  return scopes.join(' ');
+  return scopes.join(" ");
 }
