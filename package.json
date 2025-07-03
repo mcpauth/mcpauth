@@ -14,8 +14,7 @@
     "dev": "npm run dev --workspaces",
     "clean": "npm run clean --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "db:generate": "kysely-codegen --out-file ./packages/mcpauth/src/db-types.ts"
+    "test": "npm run test --workspaces --if-present"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^8.35.0",
@@ -23,8 +22,6 @@
     "eslint": "^9.29.0",
     "tsx": "^4.0.0",
     "typescript": "^5.0.0",
-    "kysely-codegen": "^0.15.0",
     "dotenv": "^16.4.5"
-  },
-  "packageManager": "pnpm@10.5.0+sha512.11106a5916c7406fe4b8cb8e3067974b8728f47308a4f5ac5e850304afa6f57e2847d7950dfe78877d8d36bfb401d381c4215db3a4c3547ffa63c14333a6fa51"
+  }
 }

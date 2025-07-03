@@ -12,6 +12,8 @@ Check out the live demo of `@mcpauth/auth` in action, deployed on Vercel:
 
 The source code for this demo is available in the [`apps/nextjs`](./apps/nextjs) directory of this repository.
 
+For more live examples, see the [Examples page](https://mcpauth-docs.vercel.app/docs/examples) in the documentation.
+
 ## Docs
 
 The documentation for `@mcpauth/auth` is available at [https://mcpauth-docs.vercel.app/](https://mcpauth-docs.vercel.app/).
