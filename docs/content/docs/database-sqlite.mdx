@@ -1,0 +1,72 @@
+---
+title: SQLite Store
+description: Setup and schema for the SQLite store adapter.
+---
+
+# SQLite Store
+
+The `SqliteAdapter` allows you to use `mcpauth` with a SQLite database. It uses `better-sqlite3` under the hood.
+
+## 1. Installation
+
+First, install the necessary packages. You'll need `@mcpauth/auth` and `better-sqlite3`.
+
+```bash
+npm install @mcpauth/auth better-sqlite3
+```
+
+## 2. Usage
+
+Import the adapter and pass the path to your SQLite database file to it in your `mcpAuth` configuration.
+
+```ts
+import { SqliteAdapter } from "@mcpauth/auth/stores/sqlite";
+// ... your other imports
+
+export const { auth, GET, POST } = mcpAuth({
+  // ... other options
+  adapter: SqliteAdapter("./db.sqlite"),
+});
+```
+
+
+## Migrations
+
+MCPAuth provides a CLI tool to manage your database schema. To run migrations for the SQLite store, add the following script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "mcpauth:migrate": "mcpauth-migrate --run"
+  }
+}
+```
+
+Then, run the command to apply the migrations:
+
+```bash
+npm run mcpauth:migrate
+```
+
+This command will create the necessary tables (`oauth_client`, `oauth_token`, etc.) in your database.
+
+## Schema
+
+To generate a SQL schema for your database, you can use `mcpauth-generate`.
+
+Add a `mcpauth:generate` script to your `package.json`:
+
+```json filename="package.json"
+{
+  "scripts": {
+    "mcpauth:generate": "mcpauth-generate sql ./schema.sql"
+  }
+}
+```
+
+<Callout type="info">
+  These scripts assume you have a `.env` file in your project root with your `DATABASE_URL` to make it accessible to the generate tool.
+
+  If you don't have a `.env` file, you can pass the `DATABASE_URL` as an environment variable to the generate tool.
+</Callout>
+
