@@ -19,6 +19,7 @@
     "database-prisma",
     "database-postgres",
     "database-mysql",
+    "database-sqlite",
     "---Advanced---",
     "advanced"
   ]

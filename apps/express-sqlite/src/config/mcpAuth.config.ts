@@ -8,7 +8,7 @@ import { Request } from "express";
 import { getSession } from "@auth/express";
 
 export const mcpAuthConfig = {
-  adapter: SqliteAdapter(process.env.SQLITE_PATH || "./db.sqlite"),
+  adapter: SqliteAdapter(process.env.DATABASE_URL || "./db.sqlite"),
 
   issuerUrl: process.env.BASE_URL || "http://localhost:3000",
   issuerPath: "/api/oauth",
