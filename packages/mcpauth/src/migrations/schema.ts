@@ -4,7 +4,6 @@ export const schema: McpAuthDbSchema = {
   oauth_client: {
     tableName: "oauth_client",
     fields: {
-      id: { type: "string", required: true, id: true, defaultValue: "cuid()" },
       client_id: { type: "string", required: true, unique: true },
       client_secret: { type: "string" },
       token_endpoint_auth_method: { type: "string", required: true },

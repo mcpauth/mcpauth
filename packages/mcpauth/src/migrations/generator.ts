@@ -63,22 +63,6 @@ export function getColumnType(field: FieldAttribute, fieldName: string, dbType: 
   return typeMap[dbType][field.type];
 }
 
-function matchType(columnDataType: string, fieldType: FieldType, dbType: DbType): boolean {
-    if (dbType === 'postgres') {
-        const pgTypes: Record<FieldType, string[]> = {
-            string: ['text', 'character varying'],
-            number: ['integer', 'bigint'],
-            boolean: ['boolean'],
-            date: ['timestamp', 'timestamp without time zone'],
-            json: ['jsonb'],
-            'string[]': ['text[]', 'jsonb']
-        }
-        return pgTypes[fieldType]?.includes(columnDataType.toLowerCase());
-    }
-    // Simplified for others, can be expanded
-    return true;
-}
-
 export async function getMigrations(db: Kysely<any>, dbType: DbType) {
   const tableMetadata = await db.introspection.getTables();
 

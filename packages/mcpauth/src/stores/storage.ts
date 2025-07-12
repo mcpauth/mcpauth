@@ -46,6 +46,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       client: OAuthClient,
       user: OAuthUser
     ): Promise<OAuthToken> {
+      const now = new Date();
       const createdToken = await adapter.create({
         model: "oauthToken",
         data: {
@@ -57,6 +58,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
           authorizationDetails: token.authorizationDetails as any,
           clientId: client.id,
           userId: user.id,
+          createdAt: now,
         },
       });
       return { ...createdToken, client, user };
@@ -134,6 +136,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
       client: OAuthClient,
       user: OAuthUser
     ): Promise<AuthorizationCode> {
+      const now = new Date();
       const createdCode = await adapter.create({
         model: "oauthAuthorizationCode",
         data: {
@@ -148,6 +151,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
           codeChallengeMethod: code.codeChallengeMethod,
           clientId: client.id,
           userId: user.id,
+          createdAt: now,
         },
       });
 
@@ -215,6 +219,7 @@ export function createStorage(adapter: GenericAdapter): Adapter {
         ? await bcrypt.hash(clientSecret, await bcrypt.genSalt(10))
         : null;
 
+      const now = new Date();
       const newClient = await adapter.create({
         model: "oauthClient",
         data: {
@@ -227,6 +232,8 @@ export function createStorage(adapter: GenericAdapter): Adapter {
           redirectUris: params.redirect_uris || [],
           grantTypes: params.grant_types || ["authorization_code"],
           scope: params.scope || "openid profile email",
+          createdAt: now,
+          updatedAt: now,
         },
       });
 
