@@ -1,6 +1,6 @@
 {
   "name": "@mcpauth/auth",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "private": false,
   "author": "MCPAuth",
   "license": "ISC",
@@ -14,7 +14,9 @@
     "build": "rm -rf ./dist && npx tsc -b tsconfig.json --force && cp package.json dist/ && chmod +x dist/cli/migrate.js && chmod +x dist/cli/generate.js",
     "dev": "npx tsc -w",
     "db:generate": "npx tsx src/cli/generate.ts",
+    "prepack": "cp ../../README.md ./README.md",
     "publish": "npm publish --access public",
+    "postpack": "rm -f ./README.md",
     "db:migrate": "npx tsx src/cli/index.ts"
   },
   "dependencies": {
