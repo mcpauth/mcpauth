@@ -1,0 +1,42 @@
+{
+  "name": "@mcpauth/express-sqlite-example",
+  "version": "1.0.0",
+  "private": false,
+  "description": "Express MCPAuth SQLite example app",
+  "engines": {
+    "node": ">=20.11.0"
+  },
+  "type": "module",
+  "scripts": {
+    "start": "node -r dotenv/config dist/server.js",
+    "clean": "rm -rf dist",
+    "build": "npm run build:ts && npm run build:css",
+    "build:ts": "tsc",
+    "build:css": "tailwindcss -i ./public/css/style.css -o ./public/css/output.css",
+    "watch:css": "npm run build:css -- --watch",
+    "predev": "kill -9 $(lsof -t -i:3000) || true",
+    "dev": "tsx watch --env-file=.env src/server.ts & npm run watch:css",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint src/*.ts --fix",
+    "prettier": "prettier src/*.ts --write",
+    "inspector": "npx @modelcontextprotocol/inspector@0.15.0"
+  },
+  "dependencies": {
+    "@auth/express": "latest",
+    "@modelcontextprotocol/sdk": "^1.13.1",
+    "dotenv": "^17.0.0",
+    "express": "^4.19.2",
+    "morgan": "^1.10.0",
+    "pug": "^3.0.2",
+    "tailwindcss": "^3.4.3",
+    "better-sqlite3": "^12.2.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/morgan": "^1.9.9",
+    "@types/node": "^20.12.7",
+    "@types/pug": "^2.0.10",
+    "tsx": "^4.7.0",
+    "typescript": "5.3.3",
+    "@types/better-sqlite3": "^7.6.13"
+  }
+}

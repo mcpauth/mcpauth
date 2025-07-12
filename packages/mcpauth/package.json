@@ -93,6 +93,11 @@
       "types": "./dist/stores/mysql/index.d.ts",
       "default": "./dist/stores/mysql/index.js"
     },
+    "./stores/sqlite": {
+      "development": "./src/stores/sqlite/index.ts",
+      "types": "./dist/stores/sqlite/index.d.ts",
+      "default": "./dist/stores/sqlite/index.js"
+    },
     "./core": {
       "development": "./src/core/index.ts",
       "types": "./dist/core/index.d.ts",

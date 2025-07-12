@@ -147,3 +147,7 @@ Desktop.ini
 *.swo
 *~
 .vercel
+
+# SQL Generation
+db.sqlite
+schema.sql
