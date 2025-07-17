@@ -81,7 +81,7 @@
       "default": "./dist/stores/prisma/index.js"
     },
     "./stores/drizzle": {
-      "development": "./src/stores/dizzle/index.ts",
+      "development": "./src/stores/drizzle/index.ts",
       "types": "./dist/stores/drizzle/index.d.ts",
       "default": "./dist/stores/drizzle/index.js"
     },
